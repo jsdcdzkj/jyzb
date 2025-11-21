@@ -1,0 +1,101 @@
+<template>
+  <el-drawer :visible.sync="dialogFormVisible" :size="variables.drawWidth" @close="close" modal-append-to-body>
+    <span slot="title" class="drawer-title"><b>出库单详情</b></span>
+    <moduleTitle title="基本信息"></moduleTitle>
+    <el-descriptions :column="2" border style="padding: 16px;">
+      <el-descriptions-item label="出库单号">{{ detailInfo.delivery_no }}</el-descriptions-item>
+<!--      <el-descriptions-item label="出库单名称">{{ detailInfo.delivery_name }}</el-descriptions-item>-->
+      <el-descriptions-item label="出库类型">{{ detailInfo.delivery_type_desc }}</el-descriptions-item>
+      <el-descriptions-item label="出库方式">{{ detailInfo.equip_status_desc }}</el-descriptions-item>
+      <el-descriptions-item label="出库对象">{{ detailInfo.warehouse_name||detailInfo.use_dept_name }}</el-descriptions-item>
+      <el-descriptions-item label="出库时间">{{ detailInfo.delivery_time }}</el-descriptions-item>
+      <el-descriptions-item label="备注">{{ detailInfo.description }}</el-descriptions-item>
+      <el-descriptions-item label="批示文件">
+        <el-link type="primary" @click="downLoadFile">{{ detailInfo.fileName }}</el-link>
+      </el-descriptions-item>
+    </el-descriptions>
+    <moduleTitle title="出库明细"></moduleTitle>
+    <div style="padding: 16px;">
+      <el-table :data="detailInfo.deliveryDetails" stripe border fit height="calc(100vh - 350px)" highlight-current-row>
+        <el-table-column label="序号" width="60" type="index" align="center"></el-table-column>
+        <el-table-column label="装备类型" width="200" prop="equip_type_name" align="center" show-overflow-tooltip></el-table-column>
+        <el-table-column label="装备名称" prop="equip_name_desc" align="center" show-overflow-tooltip></el-table-column>
+        <el-table-column label="装备编码" prop="assets_type_code" align="center"></el-table-column>
+        <el-table-column label="规格型号" width="150" prop="equip_model" align="center"></el-table-column>
+        <el-table-column label="数量" prop="delivery_num" align="center" show-overflow-tooltip></el-table-column>
+      </el-table>
+    </div>
+  </el-drawer>
+</template>
+
+<script>
+import variables from '@/styles/variables.scss'
+import {outOrderDetail} from '@/api/inventory'
+import {downLoadFile} from '@/api/system'
+export default {
+  name: 'detail',
+  data() {
+    return {
+      dialogFormVisible:false,
+      detailInfo:{
+        enterDetails:[]
+      },
+    }
+  },
+  computed: {
+    variables() {
+      return variables
+    },
+  },
+  methods: {
+    showView(id) {
+      outOrderDetail({id}).then(res=>{
+        this.dialogFormVisible = true;
+        this.$nextTick(()=>{
+          this.detailInfo = res.data;
+        })
+      })
+    },
+    close() {
+      this.dialogFormVisible = false;
+    },
+    downLoadFile(){
+      let that = this;
+      downLoadFile(this.detailInfo.fileId).then((res) => {
+        const reader = new FileReader();
+        reader.readAsText(res.data, "utf-8");
+        reader.onload = function () {
+            try {
+                const jsondata = JSON.parse(reader.result);
+                if (jsondata && jsondata.code) {
+                    if (jsondata.code == 500) {
+                        that.$message.error(jsondata.msg);
+                    }
+                } else {
+                    // 异常处理
+                }
+            } catch (err) {
+                // 成功
+                const fileName = that.detailInfo.fileName;
+                const objectUrl = URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement("a");
+                link.download = decodeURI(fileName);
+                link.href = objectUrl;
+                link.click();
+                that.$message.success("下载成功！");
+            }
+        };
+      })
+    }
+  },
+}
+</script>
+<style scoped lang="scss">
+::v-deep {
+  .el-drawer__header {
+    padding: 10px !important;
+    margin-bottom: 0px;
+    border-bottom: 1px solid #d1d9e1;
+  }
+}
+</style>

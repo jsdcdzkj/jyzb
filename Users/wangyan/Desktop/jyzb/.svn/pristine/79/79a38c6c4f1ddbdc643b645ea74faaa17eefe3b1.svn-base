@@ -1,0 +1,333 @@
+<template>
+  <div class="app-wrapper openSidebar">
+    <div class="hui">
+      <img :src="require('@/assets/hui.png')" alt="">
+    </div>
+    <div class="top-menu-container">
+      <div class="top-logo">
+        <logo v-if="showLogo" :collapse="isCollapse" />
+      </div>
+      <div class="top-menu">
+        <top-menu />
+      </div>
+      <div class="top-avatar">
+        <div class="right-menu" style="display:flex;align-items: center;font-size:15px;">
+          <el-dropdown class="avatar-container" trigger="click">
+            <div class="avatar-wrapper">
+              <img src="../assets/touxiangnan.png" class="user-avatar">
+              {{ name }}
+            </div>
+            <el-dropdown-menu slot="dropdown" class="user-dropdown">
+              <router-link to="/">
+                <el-dropdown-item>
+                  首页
+                </el-dropdown-item>
+              </router-link>
+              <el-dropdown-item @click.native="editpaw">
+                修改密码
+              </el-dropdown-item>
+              <el-dropdown-item divided @click.native="logout">
+                <span style="display:block;">退出登录</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+        </div>
+      </div>
+    </div>
+    <sidebar />
+    <div class="main-container" :class="classSidebar">
+      <div :class="{ 'fixed-header': fixedHeader }">
+        <navbar />
+      </div>
+      <app-main />
+      <el-dialog width="30%" :visible.sync="editPawdialog" title="修改密码" append-to-body>
+        <el-form label-width="80px" label-position="right">
+          <el-form-item label="旧密码">
+            <el-input v-model="paw.originalPassword" placeholder="请输入" />
+          </el-form-item>
+          <el-form-item label="新密码">
+            <el-input v-model="paw.newPassword" placeholder="请输入" show-password />
+          </el-form-item>
+          <el-form-item label="确认密码">
+            <el-input v-model="paw.rePwd" placeholder="请输入" show-password />
+          </el-form-item>
+          <el-form-item label="">
+            <el-button type="primary" @click="sendPaw" :loading="loading">确定修改</el-button>
+          </el-form-item>
+        </el-form>
+      </el-dialog>
+    </div>
+    <a href="./user_manual.docx" download="徐州市公安局警用装备共享管理平台用户使用手册.docx" class="download-btn">
+      <img src="@/assets/down_icon.png" alt="">
+      <div>下载使用手册</div>
+    </a>
+  </div>
+</template>
+
+<script>
+import { mapGetters } from 'vuex'
+import { Navbar, Sidebar, AppMain } from './components'
+import Logo from './components/Sidebar/Logo'
+import TopMenu from './components/Sidebar/TopMenu'
+import ResizeMixin from './mixin/ResizeHandler'
+import { changePwd } from '@/api/system'
+export default {
+  name: 'Layout',
+  data() {
+    return {
+      loading: false,
+      editPawdialog: false,
+      paw: {
+        originalPassword: '',
+        newPassword: '',
+        rePwd: ''
+      }
+    }
+  },
+  components: {
+    Navbar,
+    Sidebar,
+    AppMain,
+    Logo,
+    TopMenu
+  },
+  mixins: [ResizeMixin],
+  computed: {
+    ...mapGetters([
+      'second_routes',
+      'third_routes',
+      'sidebar',
+      'avatar',
+      'name'
+    ]),
+    fixedHeader() {
+      return this.$store.state.settings.fixedHeader
+    },
+    showLogo() {
+      return this.$store.state.settings.sidebarLogo
+    },
+    isCollapse() {
+      return !this.sidebar.opened
+    },
+    classSidebar() {
+      return {
+        sidebarLeft: this.second_routes.length > 0
+      }
+    }
+  },
+  methods: {
+    editpaw() {
+      this.paw = this.$options.data().paw;
+      this.editPawdialog = true;
+    },
+    sendPaw() {
+      if (!this.paw.originalPassword) {
+        this.$message.error('请输入旧密码');
+        return
+      }
+      if (!this.paw.newPassword) {
+        this.$message.error('请输入新密码');
+        return
+      }
+      if (this.paw.newPassword != this.paw.rePwd) {
+        this.$message.error('两次密码输入不一致');
+        return
+      }
+      this.loading = true;
+      changePwd(this.paw).then(() => {
+        this.$message.success('修改成功，请重新登录');
+        this.editPawdialog = false;
+        this.$store.dispatch('user/resetToken').then(() => {
+          this.$router.push('/login');
+        })
+        setTimeout(() => {
+          this.loading = false;
+        }, 1000)
+      }).catch(() => {
+        this.loading = false;
+      })
+    },
+    async logout() {
+      await this.$store.dispatch('user/logout')
+      this.$router.push(`/login`)
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+@import "~@/styles/mixin.scss";
+@import "~@/styles/variables.scss";
+
+.app-wrapper {
+  @include clearfix;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 30px;
+  overflow: hidden;
+  background: url(../assets/layout/bg.png) no-repeat;
+  background-size: 100% auto;
+
+  &.mobile.openSidebar {
+    position: fixed;
+    top: 0;
+  }
+
+  .hui {
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    width: 250px;
+    height: 135px;
+    z-index: 1002;
+
+    img {
+      width: 100%;
+      user-select: none;
+    }
+  }
+
+  .download-btn {
+    position: fixed;
+    z-index: 1003;
+    left: 38px;
+    bottom: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #244895;
+    font-size: 14px;
+    transform: scale(0.8);
+    transform-origin: 0 100%;
+
+    img {
+      width: 100px;
+      height: 100px;
+    }
+
+    div {
+      padding: 0 12px;
+      height: 28px;
+      line-height: 28px;
+      border-radius: 8px;
+      background: #E9EDF4;
+    }
+  }
+}
+
+.drawer-bg {
+  background: #000;
+  opacity: 0.3;
+  width: 100%;
+  top: 0;
+  height: 100%;
+  position: absolute;
+  z-index: 999;
+}
+
+.fixed-header {
+  position: fixed;
+  top: 120px;
+  right: 30px;
+  z-index: 9;
+  width: 100%;
+  transition: width 0.28s;
+}
+
+.sidebarLeft {
+  .fixed-header {
+    width: calc(100% - #{$sideBarWidth} - 60px - 15px);
+  }
+}
+
+.subSidebarLeft {
+  .fixed-header {
+    width: calc(100% - #{$sideBarWidth} - #{$subBarWidth});
+  }
+}
+
+.hideSidebar {
+  .fixed-header {
+    width: 100%;
+  }
+
+  .sidebarLeft .fixed-header {
+    width: calc(100% - 54px);
+  }
+}
+
+.mobile {
+  .fixed-header {
+    width: 100%;
+  }
+
+  .sidebarLeft .fixed-header {
+    width: 100%;
+  }
+}
+
+.right-menu {
+  float: right;
+  height: 100%;
+  line-height: 60px;
+  color: #fff;
+
+  &:focus {
+    outline: none;
+  }
+
+  .el-dropdown {
+    color: #fff;
+  }
+
+  .right-menu-item {
+    display: inline-block;
+    padding: 0 8px;
+    height: 100%;
+    font-size: 18px;
+    color: #5a5e66;
+    vertical-align: text-bottom;
+
+    &.hover-effect {
+      cursor: pointer;
+      transition: background .3s;
+
+      &:hover {
+        background: rgba(0, 0, 0, .025)
+      }
+    }
+  }
+
+  .avatar-container {
+    margin-left: 15px;
+    margin-right: 30px;
+    height: 60px;
+    cursor: pointer;
+
+    .avatar-wrapper {
+      display: flex;
+      align-items: center;
+      position: relative;
+
+      .user-avatar {
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 20px;
+        margin-right: 10px;
+      }
+
+      .el-icon-caret-bottom {
+        cursor: pointer;
+        position: absolute;
+        right: -20px;
+        top: 25px;
+        font-size: 12px;
+      }
+    }
+  }
+}
+</style>

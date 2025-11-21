@@ -1,0 +1,28 @@
+package com.jsdc.rfid.service.warehouse;
+
+import com.jsdc.rfid.model.AssetsType;
+import com.jsdc.rfid.model.warehouse.WarehousingEnter;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.jsdc.rfid.model.warehouse.WarehousingEnterDetail;
+import vo.ResultInfo;
+
+import java.util.List;
+import java.util.Map;
+
+public interface EnterWarehouseService {
+
+    PageInfo<WarehousingEnter> pageQuery(Integer pageIndex, Integer pageSize, WarehousingEnter warehousingEnter);
+
+    void add(WarehousingEnter warehousingEnter, String isExport);
+
+    WarehousingEnter detail(Integer id);
+
+    Map<String, List<String>> excelTypeTemplate();
+
+    Map<String, List<String>> excelStatusTemplate();
+
+    ResultInfo toImport(Integer fileId, String isSave);
+
+    void edit(WarehousingEnterDetail warehousingEnterDetail);
+}

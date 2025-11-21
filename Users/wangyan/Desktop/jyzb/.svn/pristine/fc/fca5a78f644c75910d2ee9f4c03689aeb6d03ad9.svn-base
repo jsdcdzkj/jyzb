@@ -1,0 +1,283 @@
+package com.jsdc.rfid.dao.warehouse;
+
+import cn.hutool.core.date.DateUtil;
+import com.jsdc.core.base.BaseDao;
+import com.jsdc.rfid.dto.WarehousingStockDto;
+import com.jsdc.rfid.model.warehouse.WarehousingBorrow;
+import com.jsdc.rfid.model.warehouse.WarehousingStock;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Repository
+public class WarehouseStockDao extends BaseDao<WarehousingStock> {
+
+     public static String equipStock(WarehousingStockDto warehousingStockDto){
+         StringBuilder sql = new StringBuilder();
+         sql.append(" select ");
+         sql.append(" a.equip_type, ");
+         sql.append(" a.equip_name, ");
+         sql.append(" c.assets_type_code, ");
+         sql.append(" a.equip_model, ");
+         sql.append(" b.warehouse_id, ");
+         //sql.append(" b.dept_id, ");
+         sql.append(" b.use_dept, ");
+         //sql.append(" b.equip_status, ");
+         sql.append(" MAX(a.create_time) as create_time, "); // 添加最新创建时间
+         //sql.append(" a.equip_unit, ");
+         //sql.append(" a.supplier_id, ");
+         sql.append(" sum(b.equip_in_num) as equip_in_num, ");
+         sql.append(" sum(b.equip_out_num) as equip_out_num ");
+         sql.append(" from warehousing_stock a ");
+         sql.append(" left join warehousing_stock_detail b on a.id = b.stock_id ");
+         sql.append(" left join assets_type c on c.id = b.equip_name ");
+         sql.append(" WHERE a.is_del = '0' and b.is_del = '0' and (b.warehouse_id is not null or b.use_dept is not null)");
+         //过期
+         if(StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "1".equals(warehousingStockDto.getDateType())){
+             sql.append(" and b.expired_date < '"+ DateUtil.formatDateTime(new Date()) +"'");
+         }
+         //临期
+         if(StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "2".equals(warehousingStockDto.getDateType())){
+             Date now = new Date();
+             sql.append(" and b.critical_date <= '"+ DateUtil.formatDateTime(now) +"'");
+             sql.append(" and b.expired_date >= '"+ DateUtil.formatDateTime(now) +"'");
+         }
+         //正常
+         if(StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "3".equals(warehousingStockDto.getDateType())){
+             Date now = new Date();
+             sql.append(" and b.critical_date >= '"+ DateUtil.formatDateTime(now) +"'");
+             sql.append(" and b.expired_date >= '"+ DateUtil.formatDateTime(now) +"'");
+         }
+         if(null != warehousingStockDto.getUse_dept()){
+             sql.append(" and b.use_dept = ").append(warehousingStockDto.getUse_dept());
+         }
+         if(StringUtils.isNotEmpty(warehousingStockDto.getStartTime())){
+             sql.append(" and a.create_time >= '" + warehousingStockDto.getStartTime() + " 00:00:00'");
+         }
+         if(StringUtils.isNotEmpty(warehousingStockDto.getEndTime())){
+             sql.append(" and a.create_time <= '" + warehousingStockDto.getEndTime() + " 23:59:59'");
+         }
+         if(StringUtils.isNotEmpty(warehousingStockDto.getEquip_name_desc())){
+             sql.append(" and c.assets_type_name like '%" + warehousingStockDto.getEquip_name_desc() + "%'");
+         }
+         if(warehousingStockDto.getWarehouse_id()!=null)
+             sql.append(" and b.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+         if(warehousingStockDto.getEquip_status()!=null)
+             sql.append(" and b.equip_status = ").append(warehousingStockDto.getEquip_status());
+         if(StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+             sql.append(" and b.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+         if(warehousingStockDto.getEquip_type()!=null)
+             sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+         if(warehousingStockDto.getEquip_name()!=null)
+             sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+         if(StringUtils.isNotEmpty(warehousingStockDto.getEquip_model()))
+             sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+         //sql.append(" group by a.warehouse_id,a.equip_type,a.equip_model,b.equip_status,b.equip_unit,b.supplier_id");
+         //部门过滤条件
+         if(warehousingStockDto.getDeptIds()!=null){
+             sql.append(" and b.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+         }
+         sql.append(" group by a.equip_type,a.equip_name,c.assets_type_code,a.equip_model,b.warehouse_id,b.use_dept");//,b.equip_status
+         sql.append(" order by MAX(a.create_time) desc");
+         //sql.append(" order by b.account_time desc ");
+         return sql.toString();
+     }
+
+    public static void main(String[] args) {
+        System.out.printf(equipStock(new WarehousingStockDto()));
+    }
+
+    public static String equipStockAll(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" SELECT\n" +
+                "  a.equip_type,\n" +
+                "  a.equip_name,\n" +
+                "  c.assets_type_code,\n" +
+                "  a.equip_model,\n" +
+                "  COALESCE ( b.use_dept, d.dept_id ) AS use_dept,\n" +
+                "  SUM( CASE WHEN b.use_dept IS NOT NULL THEN 0 ELSE b.equip_in_num - b.equip_out_num END ) AS warehouse_num,-- 聚合 warehouse_num\n" +
+                "  SUM( CASE WHEN b.warehouse_id IS NOT NULL THEN 0 ELSE b.equip_in_num - b.equip_out_num END ) AS dept_num,-- 聚合 dept_num\n" +
+                "  MAX( a.create_time ) AS create_time,\n" +
+                "  SUM( b.equip_in_num ) AS equip_in_num,\n" +
+                "  SUM( b.equip_out_num ) AS equip_out_num \n" +
+                "FROM\n" +
+                "  warehousing_stock a\n" +
+                "  LEFT JOIN warehousing_stock_detail b ON a.id = b.stock_id\n" +
+                "  LEFT JOIN assets_type c ON c.id = b.equip_name\n" +
+                "  LEFT JOIN warehouse d ON d.id = b.warehouse_id \n" +
+                "WHERE\n" +
+                "  a.is_del = '0' \n" +
+                "  AND b.is_del = '0' \n" +
+                "  AND ( b.warehouse_id IS NOT NULL OR b.use_dept IS NOT NULL ) \n");
+        if(warehousingStockDto != null){
+            //过期
+            if(StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "1".equals(warehousingStockDto.getDateType())){
+                sql.append(" and b.expired_date < '"+ DateUtil.formatDateTime(new Date()) +"'");
+            }
+            //临期
+            if(StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "2".equals(warehousingStockDto.getDateType())){
+                Date now = new Date();
+                sql.append(" and b.critical_date <= '"+ DateUtil.formatDateTime(now) +"'");
+                sql.append(" and b.expired_date >= '"+ DateUtil.formatDateTime(now) +"'");
+            }
+            //正常
+            if(StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "3".equals(warehousingStockDto.getDateType())){
+                Date now = new Date();
+                sql.append(" and b.critical_date >= '"+ DateUtil.formatDateTime(now) +"'");
+                sql.append(" and b.expired_date >= '"+ DateUtil.formatDateTime(now) +"'");
+            }
+            if(null != warehousingStockDto.getUse_dept()){
+                sql.append(" and COALESCE ( b.use_dept, d.dept_id ) = ").append(warehousingStockDto.getUse_dept());
+            }
+            if(StringUtils.isNotEmpty(warehousingStockDto.getStartTime())){
+                sql.append(" and a.create_time >= '" + warehousingStockDto.getStartTime() + " 00:00:00'");
+            }
+            if(StringUtils.isNotEmpty(warehousingStockDto.getEndTime())){
+                sql.append(" and a.create_time <= '" + warehousingStockDto.getEndTime() + " 23:59:59'");
+            }
+            if(StringUtils.isNotEmpty(warehousingStockDto.getEquip_name_desc())){
+                sql.append(" and c.assets_type_name like '%" + warehousingStockDto.getEquip_name_desc() + "%'");
+            }
+            if(warehousingStockDto.getWarehouse_id()!=null)
+                sql.append(" and b.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+            if(warehousingStockDto.getEquip_status()!=null)
+                sql.append(" and b.equip_status = ").append(warehousingStockDto.getEquip_status());
+            if(StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+                sql.append(" and b.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+            if(warehousingStockDto.getEquip_type()!=null)
+                sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+            if(warehousingStockDto.getEquip_name()!=null)
+                sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+            if(StringUtils.isNotEmpty(warehousingStockDto.getEquip_model()))
+                sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+            //sql.append(" group by a.warehouse_id,a.equip_type,a.equip_model,b.equip_status,b.equip_unit,b.supplier_id");
+            //部门过滤条件
+            if(warehousingStockDto.getDeptIds()!=null){
+                sql.append(" and b.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+            }
+        }
+
+        sql.append(" GROUP BY\n" +
+                "  a.equip_type,\n" +
+                "  a.equip_name,\n" +
+                "  c.assets_type_code,\n" +
+                "  a.equip_model,\n" +
+                "  COALESCE ( b.use_dept, d.dept_id )\n");
+        sql.append(" HAVING warehouse_num != 0 OR dept_num != 0 ");
+        sql.append(" order by MAX(a.create_time) desc");
+
+        //sql.append(" order by b.account_time desc ");
+        return sql.toString();
+    }
+
+    public String equipStockWarehouse(WarehousingBorrow warehousingBorrow){
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT\n" +
+                "  w.warehouse_name,\n" +
+                "  t.assets_type_name equip_type_name,\n" +
+                "  n.assets_type_name equip_name_desc,\n" +
+                "  n.assets_type_code assets_type_code,\n" +
+                "  wsd.equip_type,\n" +
+                "  wsd.equip_name,\n" +
+                "  wsd.equip_model,\n" +
+                "  wsd.warehouse_id,\n" +
+                "  DATE_FORMAT(wsd.produce_date,'%Y-%m-%d') as produceDate,\n" +
+                "  sum( wsd.equip_in_num ) AS equip_in_num,\n" +
+                "  sum( wsd.equip_out_num ) AS equip_out_num,\n" +
+                "  sum( wsd.equip_in_num - wsd.equip_out_num ) AS equip_num \n" +
+                "FROM\n" +
+                "  warehousing_stock_detail wsd\n" +
+                "  LEFT JOIN warehouse w ON w.id = wsd.warehouse_id\n" +
+                "  LEFT JOIN assets_type t ON t.id = wsd.equip_type\n" +
+                "  LEFT JOIN assets_type n ON n.id = wsd.equip_name \n"
+        );
+        sql.append("WHERE wsd.is_del = 0 \n");
+
+        sql.append("AND w.dept_id = ").append(warehousingBorrow.getUse_dept()).append("\n");
+        sql.append("AND wsd.equip_type = ").append(warehousingBorrow.getEquip_type()).append("\n");
+        sql.append("AND wsd.equip_name = ").append(warehousingBorrow.getEquip_name()).append("\n");
+        sql.append("AND wsd.equip_model = '").append(warehousingBorrow.getEquip_model()).append("'\n");
+        if(null != warehousingBorrow.getWarehouse_id()){
+            sql.append("AND wsd.warehouse_id = '").append(warehousingBorrow.getWarehouse_id()).append("'\n");
+        }
+
+        sql.append("GROUP BY\n" +
+                "  wsd.equip_type,\n" +
+                "  wsd.equip_name,\n" +
+                "  wsd.equip_model,\n" +
+                "  wsd.warehouse_id,\n" +
+                "  wsd.produce_date");
+        return sql.toString();
+    }
+
+    public String stockCount(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select ");
+        sql.append(" t.equip_type, ");
+        sql.append(" t.equip_name, ");
+        sql.append(" t.assets_type_code, ");
+//        sql.append(" t.dept_id, ");
+        sql.append(" sum(case when t.equip_status = 0 then t.equip_num else 0 end) as equip_stock_num, ");
+        sql.append(" sum(case when t.equip_status = 1 then t.equip_num else 0 end) as equip_use_num, ");
+        sql.append(" sum(t.equip_num) as equip_num, ");
+        sql.append(" sum(t.price) as totalPrice ");
+        sql.append(" from ( ");
+        sql.append(" select ");
+        sql.append(" a.equip_type, ");
+        sql.append(" a.equip_name, ");
+        sql.append(" c.assets_type_code, ");
+        sql.append(" a.equip_status, ");
+//        sql.append(" a.dept_id, ");
+        sql.append(" a.unit_price, ");
+        sql.append(" sum(a.equip_in_num)-sum(a.equip_out_num) as equip_num, ");
+        sql.append(" ((sum(a.equip_in_num)-sum(a.equip_out_num)) * a.unit_price) as price ");
+        sql.append(" from ");
+        sql.append(" warehousing_stock_detail a ");
+        sql.append(" left join assets_type c on c.id = a.equip_name ");
+        sql.append(" where a.is_del = 0 and (a.warehouse_id is not null or a.use_dept is not null)");
+        if(warehousingStockDto.getWarehouse_id()!=null)
+            sql.append(" and a.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+        if(warehousingStockDto.getEquip_status()!=null)
+            sql.append(" and a.equip_status = ").append(warehousingStockDto.getEquip_status());
+        if(warehousingStockDto.getUse_dept()!=null)
+            sql.append(" and a.dept_id = ").append(warehousingStockDto.getUse_dept());
+        if(warehousingStockDto.getEquip_type()!=null){
+            sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+        }else if(warehousingStockDto.getTypeIds()!=null){
+            String joinedTypeIds = warehousingStockDto.getTypeIds().stream()
+                    .map(id -> "'" + id + "'")
+                    .collect(Collectors.joining(", "));
+            sql.append(" and a.equip_type in( ").append(joinedTypeIds).append(" )");
+        }
+        if(warehousingStockDto.getEquip_name()!=null)
+            sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+        if(StringUtils.isNotEmpty(warehousingStockDto.getEquip_model()))
+            sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+        if(StringUtils.isNotEmpty(warehousingStockDto.getProduceDate()))
+            sql.append(" and a.produce_date = '"+warehousingStockDto.getProduceDate()+"'");
+        if(StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        sql.append(" group by a.equip_type,a.equip_name,c.assets_type_code,a.equip_status,a.unit_price )t");//,a.dept_id
+        sql.append(" group by t.equip_type,t.equip_name ");//,t.dept_id
+        if(warehousingStockDto.getPriceStart()!=null||warehousingStockDto.getPriceEnd()!=null)
+            sql.append(" HAVING sum(t.price) ");
+        List<String> prices = new ArrayList<>();
+        if(warehousingStockDto.getPriceStart()!=null){
+            prices.add(" >= "+warehousingStockDto.getPriceStart()+" ");
+        }
+        if(warehousingStockDto.getPriceEnd()!=null){
+            prices.add(" <= "+warehousingStockDto.getPriceEnd()+" ");
+        }
+        sql.append(String.join("and sum( t.price )",prices));
+        return sql.toString();
+    }
+}

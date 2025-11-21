@@ -1,0 +1,198 @@
+package com.jsdc.rfid.service;
+
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.jsdc.core.base.BaseService;
+import com.jsdc.rfid.common.G;
+import com.jsdc.rfid.dao.WarehouseDao;
+import com.jsdc.rfid.mapper.WarehouseUserMapper;
+import com.jsdc.rfid.model.SysDepartment;
+import com.jsdc.rfid.model.SysUser;
+import com.jsdc.rfid.model.Warehouse;
+import com.jsdc.rfid.model.WarehouseUserMember;
+import com.jsdc.rfid.utils.CommonDataTools;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class WarehouseService extends BaseService<WarehouseDao, Warehouse> {
+
+    @Autowired
+    private SysUserService userService;
+
+    @Autowired
+    private WarehouseUserMapper warehouseUserMapper;
+
+    @Resource
+    private CommonDataTools commonDataTools;
+    @Autowired
+    private SysDepartmentService sysDepartmentService;
+
+    /**
+     * 分页查询
+     * @param warehouse
+     * @param pageIndex
+     * @param pageSize
+     * @return
+     */
+    public PageInfo<Warehouse> getPage(Warehouse warehouse, Integer pageIndex, Integer pageSize){
+        Map<Integer, SysDepartment> deptMap = commonDataTools.getDeptMap();
+        PageHelper.startPage(pageIndex, pageSize);
+        List<Warehouse> list = selectList(getWrapper(warehouse).eq(!userService.getUser().getLogin_name().equals("admin"), Warehouse::getDept_id,userService.getUser().getDepartment()));
+        list.stream().map(w->{
+            w.setDept_name(deptMap.get(w.getDept_id())!=null?deptMap.get(w.getDept_id()).getDept_name():"");
+            return w;
+        }).collect(Collectors.toList());
+        return new PageInfo<>(list);
+    }
+
+    /**
+     * 列表查询
+     * @param warehouse
+     * @return
+     */
+    public List<Warehouse> getList(Warehouse warehouse){
+        Integer dept_id = userService.getUser().getDepartment();
+        List<Integer> deptIds = sysDepartmentService.selectList(Wrappers.<SysDepartment>lambdaQuery()
+                .eq(SysDepartment::getIs_del,"0")
+                .eq(SysDepartment::getParent_dept,dept_id)
+        ).stream().map(SysDepartment::getId).collect(Collectors.toList());
+        deptIds.add(dept_id);
+        return selectList(getWrapper(warehouse).in(Warehouse::getDept_id,deptIds));
+    }
+
+    /**
+     * 新增
+     * @param warehouse
+     * @return
+     */
+    public Warehouse add(Warehouse warehouse) throws Exception{
+        if(validate(warehouse)){
+            SysUser user = userService.getUser();
+            warehouse.setCreate_time(new Date());
+            warehouse.setCreate_user(user.getId());
+            warehouse.setUpdate_time(new Date());
+            warehouse.setUpdate_user(user.getId());
+            warehouse.setPerm_mode(1);
+            warehouse.setIs_del(G.ISDEL_NO);
+            if(insert(warehouse) > 0){
+                return warehouse;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 编辑
+     * @param warehouse
+     * @return
+     */
+    public Warehouse edit(Warehouse warehouse) throws Exception{
+        if(validate(warehouse)){
+            SysUser user = userService.getUser();
+            Warehouse original = selectById(warehouse.getId());
+            BeanUtils.copyProperties(warehouse, original);
+            original.setUpdate_user(user.getId());
+            original.setUpdate_time(new Date());
+            if(updateById(original) > 0){
+                return original;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 删除
+     * @param id
+     * @return
+     */
+    public Boolean delete(Integer id){
+        SysUser user = userService.getUser();
+        Warehouse warehouse = selectById(id);
+        warehouse.setUpdate_time(new Date());
+        warehouse.setUpdate_user(user.getId());
+        warehouse.setIs_del(G.ISDEL_YES);
+        return updateById(warehouse) > 0;
+    }
+
+    /**
+     * 验证必填项
+     * @param warehouse
+     * @return
+     */
+    private Boolean validate(Warehouse warehouse){
+        if(StringUtils.isEmpty(warehouse.getWarehouse_name()) || StringUtils.isEmpty(warehouse.getWarehouse_code())){
+            throw new RuntimeException("仓库名称和仓库编码不能为空");
+        }else{
+            if (!CollectionUtils.isEmpty(selectList(Wrappers.<Warehouse>lambdaQuery()
+                    .eq(Warehouse::getWarehouse_name, warehouse.getWarehouse_name().trim())
+                    .ne(null != warehouse.getId(), Warehouse::getId, warehouse.getId())
+                    .eq(Warehouse::getIs_del, G.ISDEL_NO)))) {
+                throw new RuntimeException("仓库名称已存在");
+            }
+            return true;
+        }
+    }
+    /**
+     * 统一获取查询条件
+     * @param warehouse
+     * @return
+     */
+    private LambdaUpdateWrapper<Warehouse> getWrapper(Warehouse warehouse){
+        LambdaUpdateWrapper<Warehouse> wrapper = new LambdaUpdateWrapper<>();
+        if(null != warehouse){
+            if(StringUtils.isNotEmpty(warehouse.getWarehouse_code())){
+                wrapper.like(Warehouse::getWarehouse_code, warehouse.getWarehouse_code().trim());
+            }
+            if(StringUtils.isNotEmpty(warehouse.getWarehouse_name())){
+                wrapper.like(Warehouse::getWarehouse_name, warehouse.getWarehouse_name().trim());
+            }
+        }
+        wrapper.eq(Warehouse::getIs_del, G.ISDEL_NO);
+        return wrapper;
+    }
+
+    /**
+     * 修改仓库权限
+     * @param warehouse
+     */
+    public void editObject(Warehouse warehouse) {
+        if (null == warehouse.getId()){
+            throw new RuntimeException("仓库ID不能为空");
+        }
+        if (null == warehouse.getPerm_mode()){
+            throw new RuntimeException("权限模式不能为空");
+        }
+        updateById(warehouse);
+    }
+
+    public void editUsersByWareId(Integer warehouse_id, List<String> userIds) {
+        if (null == warehouse_id){
+            throw new RuntimeException("仓库ID不能为空");
+        }
+        if (CollectionUtils.isEmpty(userIds)){
+            throw new RuntimeException("用户ID不能为空");
+        }
+        warehouseUserMapper.delete(Wrappers.<WarehouseUserMember>lambdaQuery().eq(WarehouseUserMember::getWarehouse_id, warehouse_id));
+        for (String userId : userIds) {
+            WarehouseUserMember warehouseUserMember = new WarehouseUserMember();
+            warehouseUserMember.setWarehouse_id(warehouse_id);
+            warehouseUserMember.setUser_id(Integer.valueOf(userId));
+            warehouseUserMapper.insert(warehouseUserMember);
+        }
+    }
+}

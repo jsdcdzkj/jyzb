@@ -1,0 +1,476 @@
+2025-09-19 12:43:28.787 ERROR 24110 --- [restartedMain] o.s.b.c.l.LoggingApplicationListener     : Cannot set level 'ERROR2' for 'org.springframework.web'
+2025-09-19 12:43:28.835  INFO 24110 --- [restartedMain] com.jsdc.rfid.Application                : Starting Application on mac-mini.local with PID 24110 (/Users/wangyan/Desktop/jyzb/rfid-web/target/classes started by wangyan in /Users/wangyan/Desktop/jyzb)
+2025-09-19 12:43:28.835  INFO 24110 --- [restartedMain] com.jsdc.rfid.Application                : The following profiles are active: gs
+2025-09-19 12:43:28.867  INFO 24110 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-09-19 12:43:28.867  INFO 24110 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-09-19 12:43:29.846  INFO 24110 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2025-09-19 12:43:29.846  INFO 24110 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2025-09-19 12:43:29.878  INFO 24110 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 28ms. Found 0 repository interfaces.
+2025-09-19 12:43:29.885  INFO 24110 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2025-09-19 12:43:29.886  INFO 24110 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2025-09-19 12:43:29.910  INFO 24110 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 19ms. Found 0 repository interfaces.
+2025-09-19 12:43:30.223  INFO 24110 --- [restartedMain] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$2c4a2571] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2025-09-19 12:43:30.614  INFO 24110 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 7076 (http)
+2025-09-19 12:43:30.632  INFO 24110 --- [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-09-19 12:43:30.632  INFO 24110 --- [restartedMain] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.21]
+2025-09-19 12:43:30.708  INFO 24110 --- [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-09-19 12:43:30.708  INFO 24110 --- [restartedMain] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1841 ms
+2025-09-19 12:43:30.738  INFO 24110 --- [restartedMain] c.a.d.s.b.a.DruidDataSourceAutoConfigure : Init DruidDataSource
+2025-09-19 12:43:30.807  INFO 24110 --- [restartedMain] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} inited
+2025-09-19 12:43:30.840  INFO 24110 --- [restartedMain] n.h.spring.boot.BasicHasorConfiguration  : 
+ _    _                        ____              _
+| |  | |                      |  _ \            | |
+| |__| | __ _ ___  ___  _ __  | |_) | ___   ___ | |_
+|  __  |/ _` / __|/ _ \| '__| |  _ < / _ \ / _ \| __|
+| |  | | (_| \__ \ (_) | |    | |_) | (_) | (_) | |_
+|_|  |_|\__,_|___/\___/|_|    |____/ \___/ \___/ \__|
+
+2025-09-19 12:43:30.848  INFO 24110 --- [restartedMain] net.hasor.core.Hasor                     : runMode at Full ,runPath at /Users/wangyan/Desktop/jyzb
+2025-09-19 12:43:30.852  INFO 24110 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataway-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataway/4.1.6/hasor-dataway-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:30.853  INFO 24110 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/core-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-core/4.1.6/hasor-core-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:30.854  INFO 24110 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/web-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-web/4.1.6/hasor-web-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:30.854  INFO 24110 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/db-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-db/4.1.6/hasor-db-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:30.855  INFO 24110 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataql-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataql/4.1.6/hasor-dataql-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:30.855  INFO 24110 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataql-fx-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataql-fx/4.1.6/hasor-dataql-fx-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:30.870  INFO 24110 --- [restartedMain] n.h.c.environment.AbstractEnvironment    : loadPackages = com.*, net.*, net.hasor.*, net.hasor.dataql.*, net.hasor.dataql.fx.*, net.hasor.dataway.*, net.hasor.db.*, net.hasor.web.*, org.*
+2025-09-19 12:43:30.921  INFO 24110 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.dataway.config.DatawayModule
+2025-09-19 12:43:30.921  INFO 24110 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway api workAt /api/
+2025-09-19 12:43:30.921  INFO 24110 --- [restartedMain] n.h.c.environment.AbstractEnvironment    : var -> HASOR_DATAQL_DATAWAY_API_URL = /api/.
+2025-09-19 12:43:30.927  INFO 24110 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway self isolation ->net.hasor.dataway.config.DatawayModule
+2025-09-19 12:43:30.928  INFO 24110 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway admin workAt /interface-ui/
+2025-09-19 12:43:30.935  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[7f1726b0227d4736bd0dc57cd82ae9d3] -> bindType 'class net.hasor.dataway.web.ApiDetailController' mappingTo: '[/interface-ui/api/api-detail]'.
+2025-09-19 12:43:30.935  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[8ae8253230e64e7691b0812539e662be] -> bindType 'class net.hasor.dataway.web.ApiHistoryListController' mappingTo: '[/interface-ui/api/api-history]'.
+2025-09-19 12:43:30.936  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[90164a643ec94f5d9a39e6a42f8c9401] -> bindType 'class net.hasor.dataway.web.ApiInfoController' mappingTo: '[/interface-ui/api/api-info]'.
+2025-09-19 12:43:30.936  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[8657e05c7bbd4fe2bc0b0a27120b0097] -> bindType 'class net.hasor.dataway.web.ApiListController' mappingTo: '[/interface-ui/api/api-list]'.
+2025-09-19 12:43:30.936  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[aa4618d35daf4503bcf8bbece7ee95a6] -> bindType 'class net.hasor.dataway.web.ApiHistoryGetController' mappingTo: '[/interface-ui/api/get-history]'.
+2025-09-19 12:43:30.938  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[a14dff466498449e97201ba607fd9029] -> bindType 'class net.hasor.dataway.web.DisableController' mappingTo: '[/interface-ui/api/disable]'.
+2025-09-19 12:43:30.938  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[048d640e30d6490c8eff921c7ad6bc2a] -> bindType 'class net.hasor.dataway.web.SmokeController' mappingTo: '[/interface-ui/api/smoke]'.
+2025-09-19 12:43:30.939  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[4ea04514893c444a9b310b00495ee6d9] -> bindType 'class net.hasor.dataway.web.SaveApiController' mappingTo: '[/interface-ui/api/save-api]'.
+2025-09-19 12:43:30.939  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[dbbdf172adc24d98a9273db90071b1f0] -> bindType 'class net.hasor.dataway.web.PublishController' mappingTo: '[/interface-ui/api/publish]'.
+2025-09-19 12:43:30.939  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[313ff77be03f4e308278f92eeb5f8fd8] -> bindType 'class net.hasor.dataway.web.PerformController' mappingTo: '[/interface-ui/api/perform]'.
+2025-09-19 12:43:30.940  INFO 24110 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[846644e2fe8f4a85a187b4fc7e3efc81] -> bindType 'class net.hasor.dataway.web.DeleteController' mappingTo: '[/interface-ui/api/delete]'.
+2025-09-19 12:43:30.941  INFO 24110 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.web.render.RenderWebPlugin
+2025-09-19 12:43:30.941  INFO 24110 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.core.exts.startup.StartupModule
+2025-09-19 12:43:30.941  INFO 24110 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.core.exts.aop.AopModule
+2025-09-19 12:43:30.942  INFO 24110 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.dataql.fx.FxModule
+2025-09-19 12:43:30.944  INFO 24110 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class com.jsdc.rfid.common.config.ExampleModule
+2025-09-19 12:43:30.945  INFO 24110 --- [restartedMain] n.h.core.context.TemplateAppContext$1    : installModule ->net.hasor.db.JdbcModule@7dde22c1
+2025-09-19 12:43:30.947  INFO 24110 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.spring.boot.BasicHasorConfiguration$$Lambda$388/1429340404
+2025-09-19 12:43:31.040  INFO 24110 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway dbMapping MySQL to default
+2025-09-19 12:43:31.041  INFO 24110 --- [restartedMain] net.hasor.web.render.RenderWebPlugin     : RenderPlugin init -> useLayout=false, layoutPath=/layout, templatePath=/templates, placeholder=content_placeholder, defaultLayout=default.html
+2025-09-19 12:43:31.047  INFO 24110 --- [Hasor-EventPool-1] n.hasor.core.context.TemplateAppContext  : Hasor StartCompleted!
+2025-09-19 12:43:31.052  INFO 24110 --- [restartedMain] n.h.spring.boot.WebHasorConfiguration    : @EnableHasorWeb -> filterPath='/*', filterOrder='0', filterWorkAt='Filter'
+2025-09-19 12:43:31.454  INFO 24110 --- [restartedMain] net.hasor.web.startup.RuntimeListener    : ServletContext Attribut is net.hasor.core.AppContext
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiDetailController' mappingTo: '/interface-ui/api/api-detail'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiHistoryListController' mappingTo: '/interface-ui/api/api-history'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiInfoController' mappingTo: '/interface-ui/api/api-info'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiListController' mappingTo: '/interface-ui/api/api-list'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiHistoryGetController' mappingTo: '/interface-ui/api/get-history'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.DisableController' mappingTo: '/interface-ui/api/disable'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.SmokeController' mappingTo: '/interface-ui/api/smoke'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.SaveApiController' mappingTo: '/interface-ui/api/save-api'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.PublishController' mappingTo: '/interface-ui/api/publish'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.PerformController' mappingTo: '/interface-ui/api/perform'.
+2025-09-19 12:43:31.459  INFO 24110 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.DeleteController' mappingTo: '/interface-ui/api/delete'.
+2025-09-19 12:43:31.469  INFO 24110 --- [restartedMain] net.hasor.web.startup.RuntimeFilter      : RuntimeFilter started, at Apache Tomcat/9.0.21
+2025-09-19 12:43:31.566  INFO 24110 --- [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2025-09-19 12:43:31.617  INFO 24110 --- [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.10.Final}
+2025-09-19 12:43:31.619  INFO 24110 --- [restartedMain] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2025-09-19 12:43:31.753  INFO 24110 --- [restartedMain] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2025-09-19 12:43:31.875  INFO 24110 --- [restartedMain] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL5Dialect
+2025-09-19 12:43:34.223  INFO 24110 --- [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-09-19 12:43:34.260  INFO 24110 --- [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2025-09-19 12:43:37.391  INFO 24110 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'clientInboundChannelExecutor'
+2025-09-19 12:43:37.399  INFO 24110 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'clientOutboundChannelExecutor'
+2025-09-19 12:43:37.407  INFO 24110 --- [restartedMain] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService 'messageBrokerTaskScheduler'
+2025-09-19 12:43:37.441  INFO 24110 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'brokerChannelExecutor'
+2025-09-19 12:43:37.638  INFO 24110 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'taskExecutor'
+2025-09-19 12:43:37.743  INFO 24110 --- [restartedMain] o.a.c.w.s.f.ReflectionServiceFactoryBean : Creating Service {http://service.rfid.jsdc.com}DataServiceImplService from class com.jsdc.rfid.service.DataService
+2025-09-19 12:43:38.047  INFO 24110 --- [restartedMain] org.apache.cxf.endpoint.ServerImpl       : Setting the server's publish address to be /api
+2025-09-19 12:43:38.053  INFO 24110 --- [restartedMain] o.a.c.common.injection.ResourceInjector  : failed to resolve resource com.jsdc.rfid.service.DataServiceImpl/applicationContext
+2025-09-19 12:43:38.180  WARN 24110 --- [restartedMain] aWebConfiguration$JpaWebMvcConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-09-19 12:43:38.832  WARN 24110 --- [restartedMain] o.s.b.a.f.FreeMarkerAutoConfiguration    : Cannot find template location(s): [classpath:/templates/] (please add some templates, check your FreeMarker configuration, or set spring.freemarker.checkTemplateLocation=false)
+2025-09-19 12:43:38.872  INFO 24110 --- [restartedMain] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoint(s) beneath base path '/actuator'
+2025-09-19 12:43:38.977  INFO 24110 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2025-09-19 12:43:38.978  INFO 24110 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [DefaultSubscriptionRegistry[cache[0 destination(s)], registry[0 sessions]]]]
+2025-09-19 12:43:38.978  INFO 24110 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2025-09-19 12:43:39.018  INFO 24110 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 7076 (http) with context path ''
+2025-09-19 12:43:39.020  INFO 24110 --- [restartedMain] com.jsdc.rfid.Application                : Started Application in 10.487 seconds (JVM running for 10.988)
+2025-09-19 12:43:39.034  INFO 24110 --- [restartedMain] com.jsdc.rfid.ApplicationRunner          : 1.通用配置已经找到
+2025-09-19 12:43:39.034  INFO 24110 --- [restartedMain] com.jsdc.rfid.ApplicationRunner          : 配置文件的统一门户没有配置,请先配置.
+2025-09-19 12:43:39.373  INFO 24110 --- [RMI TCP Connection(3)-127.0.0.1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-19 12:43:39.373  INFO 24110 --- [RMI TCP Connection(3)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-09-19 12:43:39.383  INFO 24110 --- [RMI TCP Connection(3)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 10 ms
+2025-09-19 12:43:39.601  INFO 24110 --- [parallel-1] io.lettuce.core.EpollProvider            : Starting without optional epoll library
+2025-09-19 12:43:39.602  INFO 24110 --- [parallel-1] io.lettuce.core.KqueueProvider           : Starting without optional kqueue library
+2025-09-19 12:43:41.444  INFO 24110 --- [Thread-18] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2025-09-19 12:43:41.445  INFO 24110 --- [Thread-18] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [DefaultSubscriptionRegistry[cache[0 destination(s)], registry[0 sessions]]]]
+2025-09-19 12:43:41.445  INFO 24110 --- [Thread-18] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2025-09-19 12:43:41.447  INFO 24110 --- [Thread-18] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'taskExecutor'
+2025-09-19 12:43:41.448  INFO 24110 --- [Thread-18] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'brokerChannelExecutor'
+2025-09-19 12:43:41.448  INFO 24110 --- [Thread-18] o.s.s.c.ThreadPoolTaskScheduler          : Shutting down ExecutorService 'messageBrokerTaskScheduler'
+2025-09-19 12:43:41.449  INFO 24110 --- [Thread-18] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'clientOutboundChannelExecutor'
+2025-09-19 12:43:41.449  INFO 24110 --- [Thread-18] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'clientInboundChannelExecutor'
+2025-09-19 12:43:41.456  INFO 24110 --- [Thread-18] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-09-19 12:43:41.591  INFO 24110 --- [Hasor-ShutdownHook] n.hasor.core.context.TemplateAppContext  : Hasor StartCompleted.
+2025-09-19 12:43:42.578  INFO 24110 --- [Thread-18] o.s.b.f.support.DisposableBeanAdapter    : Destroy method 'shutdown' on bean with name 'webAppContext' threw an exception: java.lang.IllegalStateException: the container is not started yet.
+2025-09-19 12:43:42.578  INFO 24110 --- [Thread-18] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closing ...
+2025-09-19 12:43:42.585  INFO 24110 --- [Thread-18] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closed
+2025-09-19 12:43:44.322  INFO 24145 --- [restartedMain] com.jsdc.rfid.Application                : Starting Application on mac-mini.local with PID 24145 (/Users/wangyan/Desktop/jyzb/rfid-web/target/classes started by wangyan in /Users/wangyan/Desktop/jyzb)
+2025-09-19 12:43:44.324  INFO 24145 --- [restartedMain] com.jsdc.rfid.Application                : The following profiles are active: gs
+2025-09-19 12:43:44.354  INFO 24145 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-09-19 12:43:44.354  INFO 24145 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-09-19 12:43:45.286  INFO 24145 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2025-09-19 12:43:45.286  INFO 24145 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2025-09-19 12:43:45.318  INFO 24145 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 27ms. Found 0 repository interfaces.
+2025-09-19 12:43:45.326  INFO 24145 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2025-09-19 12:43:45.327  INFO 24145 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2025-09-19 12:43:45.351  INFO 24145 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 19ms. Found 0 repository interfaces.
+2025-09-19 12:43:45.674  INFO 24145 --- [restartedMain] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$7b8018c3] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2025-09-19 12:43:46.068  INFO 24145 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 7076 (http)
+2025-09-19 12:43:46.085  INFO 24145 --- [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-09-19 12:43:46.085  INFO 24145 --- [restartedMain] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.21]
+2025-09-19 12:43:46.159  INFO 24145 --- [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-09-19 12:43:46.160  INFO 24145 --- [restartedMain] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1806 ms
+2025-09-19 12:43:46.190  INFO 24145 --- [restartedMain] c.a.d.s.b.a.DruidDataSourceAutoConfigure : Init DruidDataSource
+2025-09-19 12:43:46.259  INFO 24145 --- [restartedMain] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} inited
+2025-09-19 12:43:46.293  INFO 24145 --- [restartedMain] n.h.spring.boot.BasicHasorConfiguration  : 
+ _    _                        ____              _
+| |  | |                      |  _ \            | |
+| |__| | __ _ ___  ___  _ __  | |_) | ___   ___ | |_
+|  __  |/ _` / __|/ _ \| '__| |  _ < / _ \ / _ \| __|
+| |  | | (_| \__ \ (_) | |    | |_) | (_) | (_) | |_
+|_|  |_|\__,_|___/\___/|_|    |____/ \___/ \___/ \__|
+
+2025-09-19 12:43:46.301  INFO 24145 --- [restartedMain] net.hasor.core.Hasor                     : runMode at Full ,runPath at /Users/wangyan/Desktop/jyzb
+2025-09-19 12:43:46.304  INFO 24145 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataway-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataway/4.1.6/hasor-dataway-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:46.305  INFO 24145 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/core-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-core/4.1.6/hasor-core-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:46.306  INFO 24145 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/web-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-web/4.1.6/hasor-web-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:46.306  INFO 24145 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/db-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-db/4.1.6/hasor-db-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:46.307  INFO 24145 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataql-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataql/4.1.6/hasor-dataql-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:46.307  INFO 24145 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataql-fx-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataql-fx/4.1.6/hasor-dataql-fx-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:43:46.320  INFO 24145 --- [restartedMain] n.h.c.environment.AbstractEnvironment    : loadPackages = com.*, net.*, net.hasor.*, net.hasor.dataql.*, net.hasor.dataql.fx.*, net.hasor.dataway.*, net.hasor.db.*, net.hasor.web.*, org.*
+2025-09-19 12:43:46.368  INFO 24145 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.dataway.config.DatawayModule
+2025-09-19 12:43:46.369  INFO 24145 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway api workAt /api/
+2025-09-19 12:43:46.369  INFO 24145 --- [restartedMain] n.h.c.environment.AbstractEnvironment    : var -> HASOR_DATAQL_DATAWAY_API_URL = /api/.
+2025-09-19 12:43:46.374  INFO 24145 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway self isolation ->net.hasor.dataway.config.DatawayModule
+2025-09-19 12:43:46.376  INFO 24145 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway admin workAt /interface-ui/
+2025-09-19 12:43:46.382  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[1c532d3b00f84731bfc44ad85c712e29] -> bindType 'class net.hasor.dataway.web.ApiDetailController' mappingTo: '[/interface-ui/api/api-detail]'.
+2025-09-19 12:43:46.383  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[fa5041e1ef1740d5966a4d074035826e] -> bindType 'class net.hasor.dataway.web.ApiHistoryListController' mappingTo: '[/interface-ui/api/api-history]'.
+2025-09-19 12:43:46.383  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[9915778e4fce4ce5a07f0a2ca3055821] -> bindType 'class net.hasor.dataway.web.ApiInfoController' mappingTo: '[/interface-ui/api/api-info]'.
+2025-09-19 12:43:46.383  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[f406c60868ba48799d2150897667f412] -> bindType 'class net.hasor.dataway.web.ApiListController' mappingTo: '[/interface-ui/api/api-list]'.
+2025-09-19 12:43:46.384  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[f093873ca65c490b9427db3c26578326] -> bindType 'class net.hasor.dataway.web.ApiHistoryGetController' mappingTo: '[/interface-ui/api/get-history]'.
+2025-09-19 12:43:46.385  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[3f8813e5b21f48ebb27afdbbe53eaee0] -> bindType 'class net.hasor.dataway.web.DisableController' mappingTo: '[/interface-ui/api/disable]'.
+2025-09-19 12:43:46.386  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[99ec7dd1038a40fcb933f5d35b330757] -> bindType 'class net.hasor.dataway.web.SmokeController' mappingTo: '[/interface-ui/api/smoke]'.
+2025-09-19 12:43:46.386  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[af3065f7a3b141ae9eeb6ea345dbc4ff] -> bindType 'class net.hasor.dataway.web.SaveApiController' mappingTo: '[/interface-ui/api/save-api]'.
+2025-09-19 12:43:46.386  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[329be018b55c496a85cfb0ce6ba110c2] -> bindType 'class net.hasor.dataway.web.PublishController' mappingTo: '[/interface-ui/api/publish]'.
+2025-09-19 12:43:46.387  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[edd05b00f0fa4f59a9abda94992e4a4a] -> bindType 'class net.hasor.dataway.web.PerformController' mappingTo: '[/interface-ui/api/perform]'.
+2025-09-19 12:43:46.387  INFO 24145 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[0298c3db959e45368d0d65cb86021d85] -> bindType 'class net.hasor.dataway.web.DeleteController' mappingTo: '[/interface-ui/api/delete]'.
+2025-09-19 12:43:46.389  INFO 24145 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.web.render.RenderWebPlugin
+2025-09-19 12:43:46.389  INFO 24145 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.core.exts.startup.StartupModule
+2025-09-19 12:43:46.389  INFO 24145 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.core.exts.aop.AopModule
+2025-09-19 12:43:46.390  INFO 24145 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.dataql.fx.FxModule
+2025-09-19 12:43:46.392  INFO 24145 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class com.jsdc.rfid.common.config.ExampleModule
+2025-09-19 12:43:46.393  INFO 24145 --- [restartedMain] n.h.core.context.TemplateAppContext$1    : installModule ->net.hasor.db.JdbcModule@343f1952
+2025-09-19 12:43:46.396  INFO 24145 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.spring.boot.BasicHasorConfiguration$$Lambda$388/1284407380
+2025-09-19 12:43:46.492  INFO 24145 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway dbMapping MySQL to default
+2025-09-19 12:43:46.494  INFO 24145 --- [restartedMain] net.hasor.web.render.RenderWebPlugin     : RenderPlugin init -> useLayout=false, layoutPath=/layout, templatePath=/templates, placeholder=content_placeholder, defaultLayout=default.html
+2025-09-19 12:43:46.501  INFO 24145 --- [Hasor-EventPool-1] n.hasor.core.context.TemplateAppContext  : Hasor StartCompleted!
+2025-09-19 12:43:46.506  INFO 24145 --- [restartedMain] n.h.spring.boot.WebHasorConfiguration    : @EnableHasorWeb -> filterPath='/*', filterOrder='0', filterWorkAt='Filter'
+2025-09-19 12:43:46.932  INFO 24145 --- [restartedMain] net.hasor.web.startup.RuntimeListener    : ServletContext Attribut is net.hasor.core.AppContext
+2025-09-19 12:43:46.936  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiDetailController' mappingTo: '/interface-ui/api/api-detail'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiHistoryListController' mappingTo: '/interface-ui/api/api-history'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiInfoController' mappingTo: '/interface-ui/api/api-info'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiListController' mappingTo: '/interface-ui/api/api-list'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiHistoryGetController' mappingTo: '/interface-ui/api/get-history'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.DisableController' mappingTo: '/interface-ui/api/disable'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.SmokeController' mappingTo: '/interface-ui/api/smoke'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.SaveApiController' mappingTo: '/interface-ui/api/save-api'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.PublishController' mappingTo: '/interface-ui/api/publish'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.PerformController' mappingTo: '/interface-ui/api/perform'.
+2025-09-19 12:43:46.937  INFO 24145 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.DeleteController' mappingTo: '/interface-ui/api/delete'.
+2025-09-19 12:43:46.947  INFO 24145 --- [restartedMain] net.hasor.web.startup.RuntimeFilter      : RuntimeFilter started, at Apache Tomcat/9.0.21
+2025-09-19 12:43:47.049  INFO 24145 --- [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2025-09-19 12:43:47.102  INFO 24145 --- [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.10.Final}
+2025-09-19 12:43:47.104  INFO 24145 --- [restartedMain] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2025-09-19 12:43:47.240  INFO 24145 --- [restartedMain] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2025-09-19 12:43:47.362  INFO 24145 --- [restartedMain] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL5Dialect
+2025-09-19 12:43:49.735  INFO 24145 --- [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-09-19 12:43:49.773  INFO 24145 --- [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2025-09-19 12:43:52.868  INFO 24145 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'clientInboundChannelExecutor'
+2025-09-19 12:43:52.875  INFO 24145 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'clientOutboundChannelExecutor'
+2025-09-19 12:43:52.883  INFO 24145 --- [restartedMain] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService 'messageBrokerTaskScheduler'
+2025-09-19 12:43:52.913  INFO 24145 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'brokerChannelExecutor'
+2025-09-19 12:43:53.116  INFO 24145 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'taskExecutor'
+2025-09-19 12:43:53.228  INFO 24145 --- [restartedMain] o.a.c.w.s.f.ReflectionServiceFactoryBean : Creating Service {http://service.rfid.jsdc.com}DataServiceImplService from class com.jsdc.rfid.service.DataService
+2025-09-19 12:43:53.515  INFO 24145 --- [restartedMain] org.apache.cxf.endpoint.ServerImpl       : Setting the server's publish address to be /api
+2025-09-19 12:43:53.520  INFO 24145 --- [restartedMain] o.a.c.common.injection.ResourceInjector  : failed to resolve resource com.jsdc.rfid.service.DataServiceImpl/applicationContext
+2025-09-19 12:43:53.627  WARN 24145 --- [restartedMain] aWebConfiguration$JpaWebMvcConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-09-19 12:43:54.310  WARN 24145 --- [restartedMain] o.s.b.a.f.FreeMarkerAutoConfiguration    : Cannot find template location(s): [classpath:/templates/] (please add some templates, check your FreeMarker configuration, or set spring.freemarker.checkTemplateLocation=false)
+2025-09-19 12:43:54.348  INFO 24145 --- [restartedMain] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoint(s) beneath base path '/actuator'
+2025-09-19 12:43:54.455  INFO 24145 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2025-09-19 12:43:54.456  INFO 24145 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [DefaultSubscriptionRegistry[cache[0 destination(s)], registry[0 sessions]]]]
+2025-09-19 12:43:54.456  INFO 24145 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2025-09-19 12:43:54.496  INFO 24145 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 7076 (http) with context path ''
+2025-09-19 12:43:54.499  INFO 24145 --- [restartedMain] com.jsdc.rfid.Application                : Started Application in 10.472 seconds (JVM running for 10.969)
+2025-09-19 12:43:54.512  INFO 24145 --- [restartedMain] com.jsdc.rfid.ApplicationRunner          : 1.通用配置已经找到
+2025-09-19 12:43:54.512  INFO 24145 --- [restartedMain] com.jsdc.rfid.ApplicationRunner          : 配置文件的统一门户没有配置,请先配置.
+2025-09-19 12:43:54.890  INFO 24145 --- [RMI TCP Connection(3)-127.0.0.1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-19 12:43:54.890  INFO 24145 --- [RMI TCP Connection(3)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-09-19 12:43:54.899  INFO 24145 --- [RMI TCP Connection(3)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 9 ms
+2025-09-19 12:43:55.121  INFO 24145 --- [parallel-1] io.lettuce.core.EpollProvider            : Starting without optional epoll library
+2025-09-19 12:43:55.122  INFO 24145 --- [parallel-1] io.lettuce.core.KqueueProvider           : Starting without optional kqueue library
+2025-09-19 12:44:13.845  INFO 24145 --- [Hasor-ShutdownHook] n.hasor.core.context.TemplateAppContext  : Hasor StartCompleted.
+2025-09-19 12:44:13.849  INFO 24145 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2025-09-19 12:44:13.849  INFO 24145 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [DefaultSubscriptionRegistry[cache[0 destination(s)], registry[0 sessions]]]]
+2025-09-19 12:44:13.849  INFO 24145 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2025-09-19 12:44:13.851  INFO 24145 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'taskExecutor'
+2025-09-19 12:44:13.852  INFO 24145 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'brokerChannelExecutor'
+2025-09-19 12:44:13.852  INFO 24145 --- [Thread-31] o.s.s.c.ThreadPoolTaskScheduler          : Shutting down ExecutorService 'messageBrokerTaskScheduler'
+2025-09-19 12:44:13.853  INFO 24145 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'clientOutboundChannelExecutor'
+2025-09-19 12:44:13.853  INFO 24145 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'clientInboundChannelExecutor'
+2025-09-19 12:44:13.859  INFO 24145 --- [Thread-31] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-09-19 12:44:14.983  INFO 24145 --- [Thread-31] o.s.b.f.support.DisposableBeanAdapter    : Destroy method 'shutdown' on bean with name 'webAppContext' threw an exception: java.lang.IllegalStateException: the container is not started yet.
+2025-09-19 12:44:14.983  INFO 24145 --- [Thread-31] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closing ...
+2025-09-19 12:44:14.990  INFO 24145 --- [Thread-31] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closed
+2025-09-19 12:44:16.626  INFO 24188 --- [restartedMain] com.jsdc.rfid.Application                : Starting Application on mac-mini.local with PID 24188 (/Users/wangyan/Desktop/jyzb/rfid-web/target/classes started by wangyan in /Users/wangyan/Desktop/jyzb)
+2025-09-19 12:44:16.629  INFO 24188 --- [restartedMain] com.jsdc.rfid.Application                : The following profiles are active: gs
+2025-09-19 12:44:16.659  INFO 24188 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-09-19 12:44:16.659  INFO 24188 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-09-19 12:44:17.618  INFO 24188 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2025-09-19 12:44:17.618  INFO 24188 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2025-09-19 12:44:17.649  INFO 24188 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 27ms. Found 0 repository interfaces.
+2025-09-19 12:44:17.657  INFO 24188 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2025-09-19 12:44:17.658  INFO 24188 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2025-09-19 12:44:17.682  INFO 24188 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 19ms. Found 0 repository interfaces.
+2025-09-19 12:44:17.993  INFO 24188 --- [restartedMain] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$eb2646f6] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2025-09-19 12:44:18.384  INFO 24188 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 7076 (http)
+2025-09-19 12:44:18.401  INFO 24188 --- [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-09-19 12:44:18.402  INFO 24188 --- [restartedMain] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.21]
+2025-09-19 12:44:18.478  INFO 24188 --- [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-09-19 12:44:18.478  INFO 24188 --- [restartedMain] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1819 ms
+2025-09-19 12:44:18.512  INFO 24188 --- [restartedMain] c.a.d.s.b.a.DruidDataSourceAutoConfigure : Init DruidDataSource
+2025-09-19 12:44:18.583  INFO 24188 --- [restartedMain] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} inited
+2025-09-19 12:44:18.617  INFO 24188 --- [restartedMain] n.h.spring.boot.BasicHasorConfiguration  : 
+ _    _                        ____              _
+| |  | |                      |  _ \            | |
+| |__| | __ _ ___  ___  _ __  | |_) | ___   ___ | |_
+|  __  |/ _` / __|/ _ \| '__| |  _ < / _ \ / _ \| __|
+| |  | | (_| \__ \ (_) | |    | |_) | (_) | (_) | |_
+|_|  |_|\__,_|___/\___/|_|    |____/ \___/ \___/ \__|
+
+2025-09-19 12:44:18.625  INFO 24188 --- [restartedMain] net.hasor.core.Hasor                     : runMode at Full ,runPath at /Users/wangyan/Desktop/jyzb
+2025-09-19 12:44:18.629  INFO 24188 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataway-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataway/4.1.6/hasor-dataway-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:44:18.629  INFO 24188 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/core-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-core/4.1.6/hasor-core-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:44:18.630  INFO 24188 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/web-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-web/4.1.6/hasor-web-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:44:18.630  INFO 24188 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/db-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-db/4.1.6/hasor-db-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:44:18.631  INFO 24188 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataql-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataql/4.1.6/hasor-dataql-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:44:18.631  INFO 24188 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataql-fx-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataql-fx/4.1.6/hasor-dataql-fx-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 12:44:18.645  INFO 24188 --- [restartedMain] n.h.c.environment.AbstractEnvironment    : loadPackages = com.*, net.*, net.hasor.*, net.hasor.dataql.*, net.hasor.dataql.fx.*, net.hasor.dataway.*, net.hasor.db.*, net.hasor.web.*, org.*
+2025-09-19 12:44:18.691  INFO 24188 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.dataway.config.DatawayModule
+2025-09-19 12:44:18.692  INFO 24188 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway api workAt /api/
+2025-09-19 12:44:18.692  INFO 24188 --- [restartedMain] n.h.c.environment.AbstractEnvironment    : var -> HASOR_DATAQL_DATAWAY_API_URL = /api/.
+2025-09-19 12:44:18.697  INFO 24188 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway self isolation ->net.hasor.dataway.config.DatawayModule
+2025-09-19 12:44:18.698  INFO 24188 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway admin workAt /interface-ui/
+2025-09-19 12:44:18.704  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[2204c0c28ce04d2eacb8fd8d9d7411f9] -> bindType 'class net.hasor.dataway.web.ApiDetailController' mappingTo: '[/interface-ui/api/api-detail]'.
+2025-09-19 12:44:18.705  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[21c74501984d43a190e06f472957238f] -> bindType 'class net.hasor.dataway.web.ApiHistoryListController' mappingTo: '[/interface-ui/api/api-history]'.
+2025-09-19 12:44:18.705  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[bf7bceca64f34fc9934baf8a054ef41a] -> bindType 'class net.hasor.dataway.web.ApiInfoController' mappingTo: '[/interface-ui/api/api-info]'.
+2025-09-19 12:44:18.705  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[4a4c2d3780244b8589712a9fcd02d15a] -> bindType 'class net.hasor.dataway.web.ApiListController' mappingTo: '[/interface-ui/api/api-list]'.
+2025-09-19 12:44:18.706  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[f4680405ee034db4aa63ea23f98dbfe6] -> bindType 'class net.hasor.dataway.web.ApiHistoryGetController' mappingTo: '[/interface-ui/api/get-history]'.
+2025-09-19 12:44:18.707  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[e67872eebc754191810495bcaef88317] -> bindType 'class net.hasor.dataway.web.DisableController' mappingTo: '[/interface-ui/api/disable]'.
+2025-09-19 12:44:18.708  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[d49a3266041f4b9e8d3afc0142c88a01] -> bindType 'class net.hasor.dataway.web.SmokeController' mappingTo: '[/interface-ui/api/smoke]'.
+2025-09-19 12:44:18.708  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[c320bfaa8b0548cf80e6c37d390ace1f] -> bindType 'class net.hasor.dataway.web.SaveApiController' mappingTo: '[/interface-ui/api/save-api]'.
+2025-09-19 12:44:18.708  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[d300a725f7304e52b38c9a68d44f9669] -> bindType 'class net.hasor.dataway.web.PublishController' mappingTo: '[/interface-ui/api/publish]'.
+2025-09-19 12:44:18.709  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[4b3733ff639b4dcaacec1f92b3232fbc] -> bindType 'class net.hasor.dataway.web.PerformController' mappingTo: '[/interface-ui/api/perform]'.
+2025-09-19 12:44:18.709  INFO 24188 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[4d34a4ac6212466c9cc1dccf1cf12264] -> bindType 'class net.hasor.dataway.web.DeleteController' mappingTo: '[/interface-ui/api/delete]'.
+2025-09-19 12:44:18.710  INFO 24188 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.web.render.RenderWebPlugin
+2025-09-19 12:44:18.710  INFO 24188 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.core.exts.startup.StartupModule
+2025-09-19 12:44:18.711  INFO 24188 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.core.exts.aop.AopModule
+2025-09-19 12:44:18.712  INFO 24188 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.dataql.fx.FxModule
+2025-09-19 12:44:18.713  INFO 24188 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class com.jsdc.rfid.common.config.ExampleModule
+2025-09-19 12:44:18.714  INFO 24188 --- [restartedMain] n.h.core.context.TemplateAppContext$1    : installModule ->net.hasor.db.JdbcModule@207201ac
+2025-09-19 12:44:18.717  INFO 24188 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.spring.boot.BasicHasorConfiguration$$Lambda$388/1808160734
+2025-09-19 12:44:18.812  INFO 24188 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway dbMapping MySQL to default
+2025-09-19 12:44:18.812  INFO 24188 --- [restartedMain] net.hasor.web.render.RenderWebPlugin     : RenderPlugin init -> useLayout=false, layoutPath=/layout, templatePath=/templates, placeholder=content_placeholder, defaultLayout=default.html
+2025-09-19 12:44:18.819  INFO 24188 --- [Hasor-EventPool-1] n.hasor.core.context.TemplateAppContext  : Hasor StartCompleted!
+2025-09-19 12:44:18.823  INFO 24188 --- [restartedMain] n.h.spring.boot.WebHasorConfiguration    : @EnableHasorWeb -> filterPath='/*', filterOrder='0', filterWorkAt='Filter'
+2025-09-19 12:44:19.223  INFO 24188 --- [restartedMain] net.hasor.web.startup.RuntimeListener    : ServletContext Attribut is net.hasor.core.AppContext
+2025-09-19 12:44:19.226  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiDetailController' mappingTo: '/interface-ui/api/api-detail'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiHistoryListController' mappingTo: '/interface-ui/api/api-history'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiInfoController' mappingTo: '/interface-ui/api/api-info'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiListController' mappingTo: '/interface-ui/api/api-list'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiHistoryGetController' mappingTo: '/interface-ui/api/get-history'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.DisableController' mappingTo: '/interface-ui/api/disable'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.SmokeController' mappingTo: '/interface-ui/api/smoke'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.SaveApiController' mappingTo: '/interface-ui/api/save-api'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.PublishController' mappingTo: '/interface-ui/api/publish'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.PerformController' mappingTo: '/interface-ui/api/perform'.
+2025-09-19 12:44:19.227  INFO 24188 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.DeleteController' mappingTo: '/interface-ui/api/delete'.
+2025-09-19 12:44:19.237  INFO 24188 --- [restartedMain] net.hasor.web.startup.RuntimeFilter      : RuntimeFilter started, at Apache Tomcat/9.0.21
+2025-09-19 12:44:19.335  INFO 24188 --- [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2025-09-19 12:44:19.385  INFO 24188 --- [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.10.Final}
+2025-09-19 12:44:19.386  INFO 24188 --- [restartedMain] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2025-09-19 12:44:19.516  INFO 24188 --- [restartedMain] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2025-09-19 12:44:19.640  INFO 24188 --- [restartedMain] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL5Dialect
+2025-09-19 12:44:22.024  INFO 24188 --- [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-09-19 12:44:22.060  INFO 24188 --- [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2025-09-19 12:44:25.137  INFO 24188 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'clientInboundChannelExecutor'
+2025-09-19 12:44:25.145  INFO 24188 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'clientOutboundChannelExecutor'
+2025-09-19 12:44:25.153  INFO 24188 --- [restartedMain] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService 'messageBrokerTaskScheduler'
+2025-09-19 12:44:25.186  INFO 24188 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'brokerChannelExecutor'
+2025-09-19 12:44:25.403  INFO 24188 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'taskExecutor'
+2025-09-19 12:44:25.547  INFO 24188 --- [restartedMain] o.a.c.w.s.f.ReflectionServiceFactoryBean : Creating Service {http://service.rfid.jsdc.com}DataServiceImplService from class com.jsdc.rfid.service.DataService
+2025-09-19 12:44:25.824  INFO 24188 --- [restartedMain] org.apache.cxf.endpoint.ServerImpl       : Setting the server's publish address to be /api
+2025-09-19 12:44:25.830  INFO 24188 --- [restartedMain] o.a.c.common.injection.ResourceInjector  : failed to resolve resource com.jsdc.rfid.service.DataServiceImpl/applicationContext
+2025-09-19 12:44:25.932  WARN 24188 --- [restartedMain] aWebConfiguration$JpaWebMvcConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-09-19 12:44:26.577  WARN 24188 --- [restartedMain] o.s.b.a.f.FreeMarkerAutoConfiguration    : Cannot find template location(s): [classpath:/templates/] (please add some templates, check your FreeMarker configuration, or set spring.freemarker.checkTemplateLocation=false)
+2025-09-19 12:44:26.620  INFO 24188 --- [restartedMain] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoint(s) beneath base path '/actuator'
+2025-09-19 12:44:26.724  INFO 24188 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2025-09-19 12:44:26.725  INFO 24188 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [DefaultSubscriptionRegistry[cache[0 destination(s)], registry[0 sessions]]]]
+2025-09-19 12:44:26.725  INFO 24188 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2025-09-19 12:44:26.766  INFO 24188 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 7076 (http) with context path ''
+2025-09-19 12:44:26.769  INFO 24188 --- [restartedMain] com.jsdc.rfid.Application                : Started Application in 10.447 seconds (JVM running for 10.935)
+2025-09-19 12:44:26.784  INFO 24188 --- [restartedMain] com.jsdc.rfid.ApplicationRunner          : 1.通用配置已经找到
+2025-09-19 12:44:26.784  INFO 24188 --- [restartedMain] com.jsdc.rfid.ApplicationRunner          : 配置文件的统一门户没有配置,请先配置.
+2025-09-19 12:44:27.127  INFO 24188 --- [RMI TCP Connection(2)-127.0.0.1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-19 12:44:27.127  INFO 24188 --- [RMI TCP Connection(2)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-09-19 12:44:27.137  INFO 24188 --- [RMI TCP Connection(2)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 10 ms
+2025-09-19 12:44:27.366  INFO 24188 --- [parallel-1] io.lettuce.core.EpollProvider            : Starting without optional epoll library
+2025-09-19 12:44:27.367  INFO 24188 --- [parallel-1] io.lettuce.core.KqueueProvider           : Starting without optional kqueue library
+2025-09-19 12:45:25.187  INFO 24188 --- [MessageBroker-1] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 1, active threads = 1, queued tasks = 0, completed tasks = 0]
+2025-09-19 13:15:25.227  INFO 24188 --- [MessageBroker-1] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 2, active threads = 1, queued tasks = 0, completed tasks = 1]
+2025-09-19 13:32:07.788  INFO 24188 --- [Hasor-ShutdownHook] n.hasor.core.context.TemplateAppContext  : Hasor StartCompleted.
+2025-09-19 13:32:07.794  INFO 24188 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2025-09-19 13:32:07.794  INFO 24188 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [DefaultSubscriptionRegistry[cache[0 destination(s)], registry[0 sessions]]]]
+2025-09-19 13:32:07.794  INFO 24188 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2025-09-19 13:32:07.797  INFO 24188 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'taskExecutor'
+2025-09-19 13:32:07.798  INFO 24188 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'brokerChannelExecutor'
+2025-09-19 13:32:07.798  INFO 24188 --- [Thread-31] o.s.s.c.ThreadPoolTaskScheduler          : Shutting down ExecutorService 'messageBrokerTaskScheduler'
+2025-09-19 13:32:07.799  INFO 24188 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'clientOutboundChannelExecutor'
+2025-09-19 13:32:07.799  INFO 24188 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'clientInboundChannelExecutor'
+2025-09-19 13:32:07.806  INFO 24188 --- [Thread-31] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-09-19 13:32:09.209  INFO 27791 --- [restartedMain] com.jsdc.rfid.Application                : Starting Application on mac-mini.local with PID 27791 (/Users/wangyan/Desktop/jyzb/rfid-web/target/classes started by wangyan in /Users/wangyan/Desktop/jyzb)
+2025-09-19 13:32:09.211  INFO 27791 --- [restartedMain] com.jsdc.rfid.Application                : The following profiles are active: gs
+2025-09-19 13:32:09.239  INFO 27791 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-09-19 13:32:09.240  INFO 27791 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-09-19 13:32:10.206  INFO 27791 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2025-09-19 13:32:10.206  INFO 27791 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2025-09-19 13:32:10.242  INFO 27791 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 31ms. Found 0 repository interfaces.
+2025-09-19 13:32:10.250  INFO 27791 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2025-09-19 13:32:10.251  INFO 27791 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2025-09-19 13:32:10.277  INFO 27791 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 21ms. Found 0 repository interfaces.
+2025-09-19 13:32:10.601  INFO 27791 --- [restartedMain] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$7dd6baf8] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2025-09-19 13:32:10.989  INFO 27791 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 7076 (http)
+2025-09-19 13:32:11.007  INFO 27791 --- [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-09-19 13:32:11.007  INFO 27791 --- [restartedMain] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.21]
+2025-09-19 13:32:11.085  INFO 27791 --- [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-09-19 13:32:11.085  INFO 27791 --- [restartedMain] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1845 ms
+2025-09-19 13:32:11.115  INFO 27791 --- [restartedMain] c.a.d.s.b.a.DruidDataSourceAutoConfigure : Init DruidDataSource
+2025-09-19 13:32:11.184  INFO 27791 --- [restartedMain] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} inited
+2025-09-19 13:32:11.216  INFO 27791 --- [restartedMain] n.h.spring.boot.BasicHasorConfiguration  : 
+ _    _                        ____              _
+| |  | |                      |  _ \            | |
+| |__| | __ _ ___  ___  _ __  | |_) | ___   ___ | |_
+|  __  |/ _` / __|/ _ \| '__| |  _ < / _ \ / _ \| __|
+| |  | | (_| \__ \ (_) | |    | |_) | (_) | (_) | |_
+|_|  |_|\__,_|___/\___/|_|    |____/ \___/ \___/ \__|
+
+2025-09-19 13:32:11.223  INFO 27791 --- [restartedMain] net.hasor.core.Hasor                     : runMode at Full ,runPath at /Users/wangyan/Desktop/jyzb
+2025-09-19 13:32:11.227  INFO 27791 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataway-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataway/4.1.6/hasor-dataway-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 13:32:11.228  INFO 27791 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/core-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-core/4.1.6/hasor-core-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 13:32:11.228  INFO 27791 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/web-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-web/4.1.6/hasor-web-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 13:32:11.229  INFO 27791 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/db-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-db/4.1.6/hasor-db-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 13:32:11.229  INFO 27791 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataql-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataql/4.1.6/hasor-dataql-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 13:32:11.229  INFO 27791 --- [restartedMain] n.h.c.setting.StandardContextSettings    : addConfig '/META-INF/hasor-framework/dataql-fx-hconfig.xml' in 'jar:file:/Users/wangyan/.m2/repository/net/hasor/hasor-dataql-fx/4.1.6/hasor-dataql-fx-4.1.6.jar!/META-INF/hasor.schemas'
+2025-09-19 13:32:11.243  INFO 27791 --- [restartedMain] n.h.c.environment.AbstractEnvironment    : loadPackages = com.*, net.*, net.hasor.*, net.hasor.dataql.*, net.hasor.dataql.fx.*, net.hasor.dataway.*, net.hasor.db.*, net.hasor.web.*, org.*
+2025-09-19 13:32:11.291  INFO 27791 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.dataway.config.DatawayModule
+2025-09-19 13:32:11.291  INFO 27791 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway api workAt /api/
+2025-09-19 13:32:11.291  INFO 27791 --- [restartedMain] n.h.c.environment.AbstractEnvironment    : var -> HASOR_DATAQL_DATAWAY_API_URL = /api/.
+2025-09-19 13:32:11.296  INFO 27791 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway self isolation ->net.hasor.dataway.config.DatawayModule
+2025-09-19 13:32:11.297  INFO 27791 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway admin workAt /interface-ui/
+2025-09-19 13:32:11.303  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[046f79dfd77041cbaa06c4d6cb547105] -> bindType 'class net.hasor.dataway.web.ApiDetailController' mappingTo: '[/interface-ui/api/api-detail]'.
+2025-09-19 13:32:11.304  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[01bb602445a64609a116f689ad1a3a11] -> bindType 'class net.hasor.dataway.web.ApiHistoryListController' mappingTo: '[/interface-ui/api/api-history]'.
+2025-09-19 13:32:11.304  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[75179bbf5e6d494aba8ff10d81257eb9] -> bindType 'class net.hasor.dataway.web.ApiInfoController' mappingTo: '[/interface-ui/api/api-info]'.
+2025-09-19 13:32:11.305  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[85db73939363470a83142fa6a63227eb] -> bindType 'class net.hasor.dataway.web.ApiListController' mappingTo: '[/interface-ui/api/api-list]'.
+2025-09-19 13:32:11.305  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[7333eba0934c497695d77217f522af03] -> bindType 'class net.hasor.dataway.web.ApiHistoryGetController' mappingTo: '[/interface-ui/api/get-history]'.
+2025-09-19 13:32:11.306  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[b2deac64e0a24c23946bba769fb1b947] -> bindType 'class net.hasor.dataway.web.DisableController' mappingTo: '[/interface-ui/api/disable]'.
+2025-09-19 13:32:11.307  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[35375d703ce24c32812dd1ddc27fcf09] -> bindType 'class net.hasor.dataway.web.SmokeController' mappingTo: '[/interface-ui/api/smoke]'.
+2025-09-19 13:32:11.307  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[34617f04b5ad4d9caa4079f8505d1a9d] -> bindType 'class net.hasor.dataway.web.SaveApiController' mappingTo: '[/interface-ui/api/save-api]'.
+2025-09-19 13:32:11.308  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[8e5f523777c44ca19f3a2e5f71b73698] -> bindType 'class net.hasor.dataway.web.PublishController' mappingTo: '[/interface-ui/api/publish]'.
+2025-09-19 13:32:11.308  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[02ebaeee7b6a4602a274272d597ea7b3] -> bindType 'class net.hasor.dataway.web.PerformController' mappingTo: '[/interface-ui/api/perform]'.
+2025-09-19 13:32:11.308  INFO 27791 --- [restartedMain] net.hasor.core.binder.ApiBinderWrap      : mapingTo[9f0c837b67ad4b938f24ea6bcc050984] -> bindType 'class net.hasor.dataway.web.DeleteController' mappingTo: '[/interface-ui/api/delete]'.
+2025-09-19 13:32:11.309  INFO 27791 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.web.render.RenderWebPlugin
+2025-09-19 13:32:11.310  INFO 27791 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.core.exts.startup.StartupModule
+2025-09-19 13:32:11.310  INFO 27791 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.core.exts.aop.AopModule
+2025-09-19 13:32:11.311  INFO 27791 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.dataql.fx.FxModule
+2025-09-19 13:32:11.313  INFO 27791 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class com.jsdc.rfid.common.config.ExampleModule
+2025-09-19 13:32:11.313  INFO 27791 --- [restartedMain] n.h.core.context.TemplateAppContext$1    : installModule ->net.hasor.db.JdbcModule@2927bf2c
+2025-09-19 13:32:11.317  INFO 27791 --- [restartedMain] n.hasor.core.context.TemplateAppContext  : loadModule class net.hasor.spring.boot.BasicHasorConfiguration$$Lambda$388/636890417
+2025-09-19 13:32:11.411  INFO 27791 --- [restartedMain] net.hasor.dataway.config.DatawayModule   : dataway dbMapping MySQL to default
+2025-09-19 13:32:11.411  INFO 27791 --- [restartedMain] net.hasor.web.render.RenderWebPlugin     : RenderPlugin init -> useLayout=false, layoutPath=/layout, templatePath=/templates, placeholder=content_placeholder, defaultLayout=default.html
+2025-09-19 13:32:11.418  INFO 27791 --- [Hasor-EventPool-1] n.hasor.core.context.TemplateAppContext  : Hasor StartCompleted!
+2025-09-19 13:32:11.423  INFO 27791 --- [restartedMain] n.h.spring.boot.WebHasorConfiguration    : @EnableHasorWeb -> filterPath='/*', filterOrder='0', filterWorkAt='Filter'
+2025-09-19 13:32:11.835  INFO 27791 --- [restartedMain] net.hasor.web.startup.RuntimeListener    : ServletContext Attribut is net.hasor.core.AppContext
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiDetailController' mappingTo: '/interface-ui/api/api-detail'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiHistoryListController' mappingTo: '/interface-ui/api/api-history'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiInfoController' mappingTo: '/interface-ui/api/api-info'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiListController' mappingTo: '/interface-ui/api/api-list'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.ApiHistoryGetController' mappingTo: '/interface-ui/api/get-history'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.DisableController' mappingTo: '/interface-ui/api/disable'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.SmokeController' mappingTo: '/interface-ui/api/smoke'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.SaveApiController' mappingTo: '/interface-ui/api/save-api'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.PublishController' mappingTo: '/interface-ui/api/publish'.
+2025-09-19 13:32:11.839  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.PerformController' mappingTo: '/interface-ui/api/perform'.
+2025-09-19 13:32:11.840  INFO 27791 --- [restartedMain] net.hasor.web.invoker.InvokerContext     : mapingTo -> type 'class net.hasor.dataway.web.DeleteController' mappingTo: '/interface-ui/api/delete'.
+2025-09-19 13:32:11.850  INFO 27791 --- [restartedMain] net.hasor.web.startup.RuntimeFilter      : RuntimeFilter started, at Apache Tomcat/9.0.21
+2025-09-19 13:32:11.949  INFO 27791 --- [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2025-09-19 13:32:12.000  INFO 27791 --- [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.10.Final}
+2025-09-19 13:32:12.002  INFO 27791 --- [restartedMain] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2025-09-19 13:32:12.137  INFO 27791 --- [restartedMain] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2025-09-19 13:32:12.260  INFO 27791 --- [restartedMain] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL5Dialect
+2025-09-19 13:32:14.677  INFO 27791 --- [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-09-19 13:32:14.715  INFO 27791 --- [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2025-09-19 13:32:17.812  INFO 27791 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'clientInboundChannelExecutor'
+2025-09-19 13:32:17.819  INFO 27791 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'clientOutboundChannelExecutor'
+2025-09-19 13:32:17.826  INFO 27791 --- [restartedMain] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService 'messageBrokerTaskScheduler'
+2025-09-19 13:32:17.857  INFO 27791 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'brokerChannelExecutor'
+2025-09-19 13:32:18.080  INFO 27791 --- [restartedMain] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'taskExecutor'
+2025-09-19 13:32:18.200  INFO 27791 --- [restartedMain] o.a.c.w.s.f.ReflectionServiceFactoryBean : Creating Service {http://service.rfid.jsdc.com}DataServiceImplService from class com.jsdc.rfid.service.DataService
+2025-09-19 13:32:18.484  INFO 27791 --- [restartedMain] org.apache.cxf.endpoint.ServerImpl       : Setting the server's publish address to be /api
+2025-09-19 13:32:18.490  INFO 27791 --- [restartedMain] o.a.c.common.injection.ResourceInjector  : failed to resolve resource com.jsdc.rfid.service.DataServiceImpl/applicationContext
+2025-09-19 13:32:18.594  WARN 27791 --- [restartedMain] aWebConfiguration$JpaWebMvcConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-09-19 13:32:19.269  WARN 27791 --- [restartedMain] o.s.b.a.f.FreeMarkerAutoConfiguration    : Cannot find template location(s): [classpath:/templates/] (please add some templates, check your FreeMarker configuration, or set spring.freemarker.checkTemplateLocation=false)
+2025-09-19 13:32:19.308  INFO 27791 --- [restartedMain] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoint(s) beneath base path '/actuator'
+2025-09-19 13:32:19.414  INFO 27791 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2025-09-19 13:32:19.414  INFO 27791 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [DefaultSubscriptionRegistry[cache[0 destination(s)], registry[0 sessions]]]]
+2025-09-19 13:32:19.415  INFO 27791 --- [restartedMain] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2025-09-19 13:32:19.451  INFO 27791 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 7076 (http) with context path ''
+2025-09-19 13:32:19.453  INFO 27791 --- [restartedMain] com.jsdc.rfid.Application                : Started Application in 10.551 seconds (JVM running for 11.08)
+2025-09-19 13:32:19.466  INFO 27791 --- [restartedMain] com.jsdc.rfid.ApplicationRunner          : 1.通用配置已经找到
+2025-09-19 13:32:19.466  INFO 27791 --- [restartedMain] com.jsdc.rfid.ApplicationRunner          : 配置文件的统一门户没有配置,请先配置.
+2025-09-19 13:32:19.738  INFO 27791 --- [RMI TCP Connection(2)-127.0.0.1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-19 13:32:19.738  INFO 27791 --- [RMI TCP Connection(2)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-09-19 13:32:19.747  INFO 27791 --- [RMI TCP Connection(2)-127.0.0.1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 9 ms
+2025-09-19 13:32:19.963  INFO 27791 --- [parallel-1] io.lettuce.core.EpollProvider            : Starting without optional epoll library
+2025-09-19 13:32:19.964  INFO 27791 --- [parallel-1] io.lettuce.core.KqueueProvider           : Starting without optional kqueue library
+2025-09-19 13:32:28.585  INFO 27791 --- [Hasor-ShutdownHook] n.hasor.core.context.TemplateAppContext  : Hasor StartCompleted.
+2025-09-19 13:32:28.588  INFO 27791 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2025-09-19 13:32:28.588  INFO 27791 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [DefaultSubscriptionRegistry[cache[0 destination(s)], registry[0 sessions]]]]
+2025-09-19 13:32:28.588  INFO 27791 --- [Thread-31] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2025-09-19 13:32:28.590  INFO 27791 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'taskExecutor'
+2025-09-19 13:32:28.591  INFO 27791 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'brokerChannelExecutor'
+2025-09-19 13:32:28.591  INFO 27791 --- [Thread-31] o.s.s.c.ThreadPoolTaskScheduler          : Shutting down ExecutorService 'messageBrokerTaskScheduler'
+2025-09-19 13:32:28.591  INFO 27791 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'clientOutboundChannelExecutor'
+2025-09-19 13:32:28.592  INFO 27791 --- [Thread-31] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'clientInboundChannelExecutor'
+2025-09-19 13:32:28.598  INFO 27791 --- [Thread-31] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-09-19 13:32:29.723  INFO 27791 --- [Thread-31] o.s.b.f.support.DisposableBeanAdapter    : Destroy method 'shutdown' on bean with name 'webAppContext' threw an exception: java.lang.IllegalStateException: the container is not started yet.
+2025-09-19 13:32:29.723  INFO 27791 --- [Thread-31] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closing ...
+2025-09-19 13:32:29.729  INFO 27791 --- [Thread-31] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closed

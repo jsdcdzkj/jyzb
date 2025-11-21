@@ -1,0 +1,408 @@
+<template>
+  <div class="app-container">
+    <div class="filter_container">
+      <moduleTitle title="条件筛选"></moduleTitle>
+      <div class="filter_box">
+        <el-form :inline="true" class="demo-form-inline topsearch" @submit.native.prevent>
+          <el-form-item>
+            <el-input v-model="listQuery.name" size="small" placeholder="申请编号/装备类型/装备名称" :maxlength="50" clearable
+              @keyup.enter.native="search" />
+          </el-form-item>
+          <el-form-item>
+            <el-cascader v-model="listQuery.use_dept" :options="deptList" :show-all-levels="false"
+              :props="{ checkStrictly: true, value: 'id', label: 'title', emitPath: false }" clearable
+              placeholder="选择机构"></el-cascader>
+          </el-form-item>
+          <el-form-item>
+            <el-select clearable v-model="listQuery.status" placeholder="借用状态">
+              <el-option label="待审批" :value="1"></el-option>
+              <el-option label="借用中" :value="2"></el-option>
+              <el-option label="待归还" :value="3"></el-option>
+              <el-option label="已归还" :value="4"></el-option>
+              <el-option label="已驳回" :value="5"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-select clearable v-model="listQuery.create_user" placeholder="申请人">
+              <el-option v-for="el in userList" :key="el.id" :label="el.user_name" :value="el.id"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-select clearable v-model="listQuery.equip_type" placeholder="装备类型" @change="changeType">
+              <el-option v-for="el, index in assetsType" :key="index" :label="el.assets_type_name" :value="el.id"
+                :disabled="el.is_disable == '1'"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item v-show="listQuery.equip_type">
+            <el-select clearable v-model="listQuery.equip_name" placeholder="装备名称">
+              <el-option v-for="el, index in nameList" :key="index" :label="el.assets_type_name"
+                :value="el.id"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="primary" icon="el-icon-search" @click="search">查询</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="default" icon="el-icon-refresh" @click="refresh">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+    <div class="content-box">
+      <moduleTitle title="库存列表"></moduleTitle>
+      <div class="el-table-box">
+        <el-table v-loading="listLoading" :data="list" element-loading-text="Loading" stripe border fit height="100%"
+          highlight-current-row>
+          <el-table-column label="序号" width="60" type="index" align="center" fixed="left">
+            <template slot-scope="scope">
+              {{ (listQuery.page - 1) * listQuery.limit + scope.$index + 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="申请编号" prop="delivery_no" fixed="left" align="center" width="120"></el-table-column>
+          <el-table-column label="借用单位" prop="dept_id_name" fixed="left" align="center"
+            min-width="150"></el-table-column>
+          <el-table-column label="申请人" prop="create_user_name" align="center" width="80"></el-table-column>
+          <el-table-column label="申请数量" prop="delivery_num" align="center" width="80"></el-table-column>
+          <el-table-column align="center" prop="equip_type_name" label="装备类型" min-width="120"></el-table-column>
+          <el-table-column align="center" prop="equip_name_desc" label="装备名称" min-width="120"></el-table-column>
+          <el-table-column align="center" prop="assets_type_code" label="装备编码" min-width="120"></el-table-column>
+          <el-table-column align="center" prop="equip_model" label="装备型号" min-width="120"></el-table-column>
+          <el-table-column label="申请时间" prop="create_time" align="center" width="150"></el-table-column>
+          <el-table-column label="借用时段" align="center" width="180">
+            <template #default="{ row }">
+              {{ row.startTime }} 至 {{ row.endTime }}
+            </template>
+          </el-table-column>
+          <el-table-column label="审批时间" prop="applyTime" align="center" width="150"></el-table-column>
+          <el-table-column label="归还时间" prop="returnTime" align="center" width="150"></el-table-column>
+          <el-table-column label="状态" align="center" width="80" fixed="right">
+            <template #default="{ row }">
+              <el-tag type="warning" v-if="row.status == 1">待审批</el-tag>
+              <el-tag type="primary" v-if="row.status == 2">借用中</el-tag>
+              <el-tag type="warning" v-if="row.status == 3">待归还</el-tag>
+              <el-tag type="success" v-if="row.status == 4">已归还</el-tag>
+              <el-tag type="danger" v-if="row.status == 5">已驳回</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" align="center" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" size="mini" v-if="[2, 3, 4].includes(row.status)"
+                @click="handleDetail(row)">明细</el-button>
+              <el-button type="primary" size="mini" v-if="row.status == 1" @click="handleApply(row)">借用审批</el-button>
+              <el-button type="success" size="mini" v-if="row.status == 3"
+                @click="applyConfirmReturn(row.id)">归还确认</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <pagination v-show="total > 0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit"
+      @pagination="setQuery" />
+    <el-dialog :title="dialogType == 'apply' ? '借出审批' : '借出详情'" :visible.sync="showDialog" width="1200px">
+      <el-descriptions :column="2" border title="基础信息">
+        <el-descriptions-item label="申请单位">{{ detailInfo.dept_id_name }}</el-descriptions-item>
+        <el-descriptions-item label="申请人">{{ detailInfo.create_user_name }}</el-descriptions-item>
+        <el-descriptions-item label="装备所属单位">{{ detailInfo.use_dept_name }}</el-descriptions-item>
+        <el-descriptions-item label="借用时段">
+          {{ detailInfo.startTime }} 至 {{ detailInfo.endTime }}
+        </el-descriptions-item>
+        <el-descriptions-item label="装备类型">{{ detailInfo.equip_type_name }}</el-descriptions-item>
+        <el-descriptions-item label="装备名称">{{ detailInfo.equip_name_desc }}</el-descriptions-item>
+        <el-descriptions-item label="装备型号">{{ detailInfo.equip_model }}</el-descriptions-item>
+        <el-descriptions-item label="借用数量">{{ detailInfo.delivery_num }}</el-descriptions-item>
+      </el-descriptions>
+      <el-descriptions title="借用信息" style="margin-top: 20px;"></el-descriptions>
+      <el-table :data="stockList" ref="detailTable" stripe border fit max-height="200" key="applyTable"
+        v-if="dialogType == 'apply'">
+        <el-table-column align="center" label="序号" type="index" width="60"></el-table-column>
+        <el-table-column align="center" label="借用仓库">
+          <template #default="{ row, $index }">
+            <el-select size="mini" v-model="row.warehouse_id" placeholder="选择仓库"
+              @change="changeWarehouse($event, $index)">
+              <el-option v-for="el, index in warehouseList" :key="index" :label="el.warehouse_name"
+                :value="el.id"></el-option>
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="出厂日期">
+          <template #default="{ row, $index }">
+            <el-select size="mini" v-model="row.produce_date" placeholder="选择出厂日期"
+              @change="changeProduct($event, $index)">
+              <el-option v-for="el, index in row.dateList" :key="index" :label="el.produceDate"
+                :value="el.produceDate"></el-option>
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" prop="stock_num" label="库存数量"></el-table-column>
+        <el-table-column align="center" label="借用数量">
+          <template #default="{ row }">
+            <el-input type="number" size="mini" v-model.trim="row.equip_num" placeholder="请输入"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="操作" width="80">
+          <template #default="{ row, $index }">
+            <el-button type="danger" size="mini" @click="removeItem($index)" v-if="stockList.length > 1">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-table :data="stockList" ref="detailTable" stripe border fit max-height="200" key="detailTable"
+        v-if="dialogType == 'detail'">
+        <el-table-column align="center" label="序号" type="index" width="60"></el-table-column>
+        <el-table-column align="center" label="借用仓库" prop="warehouse_name"></el-table-column>
+        <el-table-column align="center" label="出厂日期" prop="produce_date"></el-table-column>
+        <el-table-column align="center" label="借用数量" prop="equip_num"></el-table-column>
+      </el-table>
+      <div class="add_box" @click="addItem" v-if="dialogType == 'apply'">+新增</div>
+      <template slot="footer" v-if="dialogType == 'apply'">
+        <div style="text-align: center;">
+          <el-button size="large" type="primary" @click="applyAgree" :loading="button_loading">通过</el-button>
+          <el-button size="large" type=danger @click="applyReject" :loading="button_loading">拒绝</el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import { applyLendList, applyAgree, applyReject, applyConfirmReturn, applyLendPerson, equipStockWarehouse, applyDetail } from '@/api/share'
+import { getEquipmentList, getDeptTree } from '@/api/system'
+export default {
+  data() {
+    return {
+      total: 0,
+      list: [],
+      userList: [],
+      listLoading: false,
+      assetsType: [],
+      nameList: [],
+      deptList: [],
+      button_loading: false,
+      listQuery: {
+        page: 1,
+        limit: 20,
+        status: '',
+        create_user: '',
+        name: '',
+        use_dept: '',
+        equip_type: '',
+        equip_name: ''
+      },
+      detailInfo: {},
+      showDialog: false,
+      dialogType: '',
+      warehouseList: [],
+      stockList: [{
+        warehousing_borrow_id: '',
+        warehouse_id: '',
+        equip_num: '',
+        produce_date: '',
+        stock_num: '',
+        dateList: []
+      }]
+    }
+  },
+  computed: {
+    name() {
+      return this.$store.getters.name
+    },
+    dept_name() {
+      return this.$store.getters.dept_name
+    }
+  },
+  created() {
+    this.fetchData();
+    getEquipmentList().then(res => {
+      this.assetsType = res.data || [];
+    })
+    getDeptTree({ is_permission: 0 }).then(res => {
+      this.deptList = this.handleTreeList(res.data) || [];
+    })
+    applyLendPerson().then(res => {
+      this.userList = res.data;
+    })
+  },
+  methods: {
+    search() {
+      this.listQuery.page = 1;
+      this.fetchData();
+    },
+    refresh() {
+      this.listQuery = this.$options.data().listQuery;
+      this.fetchData();
+    },
+    changeType(val) {
+      this.listQuery.equip_name = '';
+      this.nameList = [];
+      if (val) {
+        getEquipmentList({ parent_id: val }).then(res => {
+          this.nameList = res.data || [];
+        })
+      }
+    },
+    changeWarehouse(val, index) {
+      this.stockList[index].stock_num = '';
+      this.stockList[index].produce_date = '';
+      equipStockWarehouse({ id: this.detailInfo.id, warehouse_id: val }).then(res => {
+        this.stockList[index].dateList = res.data.list;
+      })
+    },
+    changeProduct(val, index) {
+      if (index == 0) {
+        this.stockList[index].stock_num = this.stockList[index].dateList.find(el => el.produceDate == val).equip_num;
+        return
+      }
+      if (this.stockList.some((el, idx) => {
+        if (el.warehouse_id == this.stockList[index].warehouse_id && el.produce_date == val && idx != index) {
+          return true;
+        } else {
+          return false;
+        }
+      })) {
+        this.$message.error('相同数据不能重复创建');
+        this.stockList[index].produce_date = '';
+        return false;
+      } else {
+        this.stockList[index].stock_num = this.stockList[index].dateList.find(el => el.produceDate == val).equip_num;
+      }
+    },
+    applyAgree() {
+      let data = this.stockList;
+      if (data.every(el => {
+        if (!el.equip_num || !el.warehouse_id || !el.produce_date) {
+          this.$message.error('数据不完整');
+          return false;
+        } else if (el.equip_num === '0') {
+          this.$message.error('借用数量不能为0');
+          return false;
+        } else if (Number(el.equip_num) > Number(el.stock_num)) {
+          this.$message.error('借用数量大于库存数量');
+          return false;
+        }
+        return true;
+      })) {
+        let sum = data.map(el => el.equip_num).reduce((prev, cure) => { return Number(prev) + Number(cure) });
+        if (sum != this.detailInfo.delivery_num) {
+          this.$message.error('借用数量与申请数量不相符');
+          return
+        }
+        const params = data.map(el => {
+          return {
+            warehousing_borrow_id: el.warehousing_borrow_id,
+            warehouse_id: el.warehouse_id,
+            equip_num: el.equip_num,
+            produce_date: el.produce_date
+          }
+        })
+        this.button_loading = true;
+        applyAgree({ id: this.detailInfo.id, borrowDetails: params }).then(() => {
+          this.$message.success('操作成功');
+          this.fetchData();
+          this.closeDialog();
+        }).catch(() => {
+          this.button_loading = false;
+        })
+      }
+    },
+    handleDetail(row) {
+      this.detailInfo = row;
+      this.dialogType = 'detail';
+      applyDetail({ id: row.id }).then(res => {
+        this.showDialog = true;
+        this.stockList = res.data.borrowDetails;
+      })
+    },
+    handleApply(row) {
+      this.button_loading = false;
+      this.detailInfo = row;
+      this.stockList = this.$options.data().stockList;
+      this.stockList[0].warehousing_borrow_id = row.id;
+      this.dialogType = 'apply';
+      this.showDialog = true;
+      equipStockWarehouse({ id: row.id }).then(res => {
+        const ids = [];
+        let listData = [];
+        res.data.warehouse.forEach(el => {
+          if (!ids.includes(el.id)) {
+            ids.push(el.id);
+            listData.push(el);
+          }
+        });
+        this.warehouseList = listData;
+      })
+    },
+    applyConfirmReturn(id) {
+      this.$confirm('是否确认已经归还?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        applyConfirmReturn({ id }).then(res => {
+          this.$message.success('归还确认成功');
+          this.fetchData();
+        })
+      })
+    },
+    applyReject() {
+      this.$confirm('确定要拒绝此次申请吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.button_loading = true;
+        applyReject({ id: this.detailInfo.id }).then(res => {
+          this.$message.success('操作成功');
+          this.fetchData();
+          this.closeDialog();
+        }).catch(() => {
+          this.button_loading = false;
+        })
+      })
+    },
+    addItem() {
+      this.stockList.push({
+        warehousing_borrow_id: this.detailInfo.id,
+        warehouse_id: '',
+        equip_num: '',
+        produce_date: '',
+        stock_num: '',
+        dateList: []
+      })
+    },
+    removeItem(index) {
+      this.stockList.splice(index, 1);
+    },
+    closeDialog() {
+      this.showDialog = false;
+    },
+    setQuery({ page, limit }) {
+      this.listQuery.page = page;
+      this.listQuery.limit = limit;
+      this.fetchData();
+    },
+    fetchData() {
+      this.listLoading = true;
+      applyLendList(this.listQuery).then((response) => {
+        this.list = response.data;
+        this.total = response.count;
+        this.listLoading = false;
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.add_box {
+  height: 32px;
+  line-height: 30px;
+  border-radius: 4px;
+  border: 1px dashed rgba(145, 163, 202, 1);
+  text-align: center;
+  color: rgba(145, 163, 202, 1);
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 20px;
+  user-select: none;
+}
+</style>

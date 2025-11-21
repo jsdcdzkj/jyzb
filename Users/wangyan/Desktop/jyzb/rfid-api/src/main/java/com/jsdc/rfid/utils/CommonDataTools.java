@@ -1,0 +1,528 @@
+package com.jsdc.rfid.utils;
+
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.google.common.collect.Maps;
+import com.jsdc.rfid.common.G;
+import com.jsdc.rfid.enums.DataType;
+import com.jsdc.rfid.mapper.*;
+import com.jsdc.rfid.mapper.warehouse.DeliveryWarehouseDetailMapper;
+import com.jsdc.rfid.mapper.warehouse.DeliveryWarehouseMapper;
+import com.jsdc.rfid.mapper.warehouse.EnterWarehouseDetailMapper;
+import com.jsdc.rfid.mapper.warehouse.EnterWarehouseMapper;
+import com.jsdc.rfid.model.*;
+import com.jsdc.rfid.model.warehouse.WarehousingDelivery;
+import com.jsdc.rfid.model.warehouse.WarehousingEnter;
+import lombok.AllArgsConstructor;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.stereotype.Component;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * ClassName: CommonDataMap
+ * Description: 得到公共数据
+ *
+ * @author zhangdequan
+ */
+@Component
+@AllArgsConstructor
+public class CommonDataTools {
+
+    private final SysUserMapper sysUserMapper;
+
+    private final SysDepartmentMapper sysDepartmentMapper;
+
+    private final AssetsTypeMapper assetsTypeMapper;
+
+    private final AssetsManageMapper assetsManageMapper;
+
+    private final InventoryManagementMapper inventoryManagementMapper;
+
+    private final WarehouseMapper warehouseMapper;
+
+    private final ChangeInfoMapper changeInfoMapper;
+
+    private final ManagementMapper managementMapper;
+
+    private final ReceiveMapper receiveMapper;
+
+    private final BorrowMapper borrowMapper;
+
+    private final PurchaseApplyMapper purchaseApplyMapper;
+
+    private final InventoryJobMapper inventoryJobMapper;
+
+    private final CarryManageMapper manageMapper;
+
+    private final ApplySingleMapper singleMapper;
+
+    private final SysDictMapper sysDictMapper;
+
+    private final SysPositionMapper sysPositionMapper;
+
+    private final SupplierMapper supplierMapper;
+
+    private final ConsAssettypeMapper consAssettypeMapper;
+
+    private final ConsCategoryMapper consCategoryMapper;
+
+    private final ConsInventoryManagementMapper consInventoryManagementMapper;
+
+    private final ConsPurchaseApplyMapper consPurchaseApplyMapper;
+
+    private final ConsReceiveMapper consReceiveMapper;
+
+    private final ConsSpecificationMapper consSpecificationMapper;
+
+    private final ConsHandworkMapper consHandworkMapper;
+
+    private final RepairApplyMapper repairApplyMapper;
+
+    private final EnterWarehouseMapper enterWarehouseMapper;
+
+    private final DeliveryWarehouseMapper deliveryWarehouseMapper;
+
+    /**
+     * 得到用户对应的key,value
+     */
+    public Map<Integer, SysUser> getUserMap() {
+        List<SysUser> sysUsers = sysUserMapper.selectList(Wrappers.<SysUser>lambdaQuery().eq(SysUser::getIs_del, "0"));
+        Map<Integer, SysUser> userMap = Maps.newHashMap();
+        for (SysUser sysUser : sysUsers) {
+            userMap.put(sysUser.getId(), sysUser);
+        }
+        return userMap;
+    }
+
+    public Map<Integer, SysUser> getUserAllMap() {
+        List<SysUser> sysUsers = sysUserMapper.selectList(Wrappers.<SysUser>lambdaQuery());
+        Map<Integer, SysUser> userMap = Maps.newHashMap();
+        for (SysUser sysUser : sysUsers) {
+            userMap.put(sysUser.getId(), sysUser);
+        }
+        return userMap;
+    }
+
+    /**
+     * 得到部门对应的key,value
+     */
+    public Map<Integer, SysDepartment> getDeptMap() {
+        List<SysDepartment> depts = sysDepartmentMapper.selectList(Wrappers.<SysDepartment>lambdaQuery().eq(SysDepartment::getIs_del, "0"));
+        Map<Integer, SysDepartment> deptMap = Maps.newHashMap();
+        for (SysDepartment dept : depts) {
+            deptMap.put(dept.getId(), dept);
+        }
+        return deptMap;
+    }
+
+    /**
+     * 得到 资产品类 的key,value
+     */
+    public Map<Integer, AssetsType> getAssetsTypeMap() {
+        List<AssetsType> assetsTypes = assetsTypeMapper.selectList(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, "0"));
+        Map<Integer, AssetsType> assetsTypeMap = Maps.newHashMap();
+        for (AssetsType assetsType : assetsTypes) {
+            assetsTypeMap.put(assetsType.getId(), assetsType);
+        }
+        return assetsTypeMap;
+    }
+
+    public List<String> getAssetsTypeIdList(List<String> typeName) {
+        List<AssetsType> assetsTypes = assetsTypeMapper.selectList(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, "0").in(AssetsType::getAssets_type_name,typeName));
+        List<String> typeIds = assetsTypes.stream().map(t->t.getId().toString()).collect(Collectors.toList());
+        return typeIds;
+    }
+
+    public List<String> getAssetsTypeIds(String id) {
+        AssetsType assetsType = assetsTypeMapper.selectById(id);
+        List<AssetsType> assetsTypes = assetsTypeMapper.selectList(
+                Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, "0")
+                .in(AssetsType::getParent_id,assetsType.getId()));
+
+        if("3".equals(id)){
+            List<AssetsType> is_statistics = assetsTypeMapper.selectList(
+                    Wrappers.<AssetsType>lambdaQuery()
+                            .eq(AssetsType::getIs_del, "0")
+                            .in(AssetsType::getIs_statistics, "1")
+            );
+            for (AssetsType type : is_statistics) {
+                assetsTypes.add(type);
+            }
+        }
+
+        List<String> typeIds = assetsTypes.stream().map(t->t.getId().toString()).collect(Collectors.toList());
+        typeIds.add(String.valueOf(id));
+        return typeIds;
+    }
+
+    public Map<String, List<String>> getAssetsTypeNames(String id) {
+        Map<String, List<String>> resultMap = new HashMap<>();
+        // 如果 id 为空，查询全部资产类型
+        if (StringUtils.isEmpty(id)) {
+            List<AssetsType> assetsTypes = assetsTypeMapper.selectList(
+                    Wrappers.<AssetsType>lambdaQuery()
+                            .eq(AssetsType::getIs_del, "0")
+            );
+            List<AssetsType> parentTypes = assetsTypes.stream().filter(t->t.getParent_id().equals(0)).collect(Collectors.toList());
+            parentTypes.stream().forEach(t->{
+                List<String> typeNames = assetsTypes.stream().filter(p->p.getParent_id().equals(t.getId())).map(e->e.getAssets_type_name()).collect(Collectors.toList());
+                resultMap.put(t.getAssets_type_name().toString(), typeNames);
+            });
+        } else {
+            // 如果 id 不为空，查询当前资产类型
+            AssetsType assetsType = assetsTypeMapper.selectById(id);
+
+            // 获取所有子资产类型，基于父资产类型的ID
+            List<AssetsType> assetsTypes = assetsTypeMapper.selectList(
+                    Wrappers.<AssetsType>lambdaQuery()
+                            .eq(AssetsType::getIs_del, "0")
+                            .in(AssetsType::getParent_id, assetsType.getId())
+            );
+
+            if("3".equals(id)){
+                List<AssetsType> is_statistics = assetsTypeMapper.selectList(
+                        Wrappers.<AssetsType>lambdaQuery()
+                                .eq(AssetsType::getIs_del, "0")
+                                .in(AssetsType::getIs_statistics, "1")
+                );
+                for (AssetsType type : is_statistics) {
+                    assetsTypes.add(type);
+                }
+            }
+
+
+            // 提取子类型名称并添加到列表中
+            List<String> typeNames = assetsTypes.stream()
+                    .map(AssetsType::getAssets_type_name)
+                    .collect(Collectors.toList());
+
+            // 将当前类型名称添加到列表中
+            //typeNames.add(assetsType.getAssets_type_name());
+
+            // 将结果放入 Map 中，key 为传入的 id，value 为名称列表
+            resultMap.put(assetsType.getAssets_type_name(), typeNames);
+        }
+
+        return resultMap;
+    }
+
+
+
+    public Map<String, AssetsType> getAssetsTypeCodeMap() {
+        List<AssetsType> assetsTypes = assetsTypeMapper.selectList(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, "0").isNotNull(AssetsType::getAssets_type_code));
+        Map<String, AssetsType> assetsTypeMap = Maps.newHashMap();
+        for (AssetsType assetsType : assetsTypes) {
+            assetsTypeMap.put(assetsType.getAssets_type_code(), assetsType);
+        }
+        return assetsTypeMap;
+    }
+
+    /**
+     * 得到仓库对应的key,value
+     */
+    public Map<Integer, Warehouse> getWarehouseMap() {
+        List<Warehouse> list = warehouseMapper.selectList(Wrappers.<Warehouse>lambdaQuery().eq(Warehouse::getIs_del, "0"));
+        Map<Integer, Warehouse> warehouseMap = Maps.newHashMap();
+        for (Warehouse warehouse : list) {
+            warehouseMap.put(warehouse.getId(), warehouse);
+        }
+        return warehouseMap;
+    }
+
+    /**
+     * 得到字典表对应的key,value
+     */
+    public Map<Integer, SysDict> getSysDictMap(String type) {
+        List<SysDict> list = sysDictMapper.selectList(Wrappers.<SysDict>lambdaQuery().eq(SysDict::getType, type).eq(SysDict::getIs_del, "0"));
+        Map<Integer, SysDict> managementMap = Maps.newHashMap();
+        for (SysDict sysDict : list) {
+            managementMap.put(Integer.valueOf(sysDict.getValue()), sysDict);
+        }
+        return managementMap;
+    }
+
+    /**
+     * 得到位置的key ,value
+     * @return
+     */
+    public Map<Integer, SysPosition> getPositionMap() {
+        List<SysPosition> list = sysPositionMapper.selectList(null);
+        Map<Integer, SysPosition> positionMap = Maps.newHashMap();
+        for (SysPosition sysPosition : list) {
+            positionMap.put(sysPosition.getId(), sysPosition);
+        }
+        return positionMap;
+    }
+
+    /**
+     * 得到供应商
+     */
+    public Map<Integer, Supplier> getSupplierMap() {
+        List<Supplier> list = supplierMapper.selectList(Wrappers.<Supplier>lambdaQuery().eq(Supplier::getIs_del, "0"));
+        Map<Integer, Supplier> supplierMap = Maps.newHashMap();
+        for (Supplier supplier : list) {
+            supplierMap.put(supplier.getId(), supplier);
+        }
+        return supplierMap;
+    }
+
+    /**
+     * 得到易耗品名称 key,value
+     */
+    public Map<Integer, ConsAssettype> getConsAssettypeMap() {
+        List<ConsAssettype> list = consAssettypeMapper.selectList(Wrappers.<ConsAssettype>lambdaQuery().eq(ConsAssettype::getIs_del, "0"));
+        Map<Integer, ConsAssettype> consAssettypeMap = Maps.newHashMap();
+        for (ConsAssettype consAssettype : list) {
+            consAssettypeMap.put(consAssettype.getId(), consAssettype);
+        }
+        return consAssettypeMap;
+    }
+
+    /**
+     * 得到耗材品类
+     */
+    public Map<Integer, ConsCategory> getConsCategoryMap() {
+        List<ConsCategory> list = consCategoryMapper.selectList(Wrappers.<ConsCategory>lambdaQuery().eq(ConsCategory::getIs_del, "0"));
+        Map<Integer, ConsCategory> consCategoryMap = Maps.newHashMap();
+        for (ConsCategory consCategory : list) {
+            consCategoryMap.put(consCategory.getId(), consCategory);
+        }
+        return consCategoryMap;
+    }
+    /**
+     * 得到易耗品规格型号
+     */
+    public Map<Integer, ConsSpecification> getConsSpecificationMap() {
+        List<ConsSpecification> list = consSpecificationMapper.selectList(Wrappers.<ConsSpecification>lambdaQuery().eq(ConsSpecification::getIs_del, "0"));
+        Map<Integer, ConsSpecification> consSpecificationMap = Maps.newHashMap();
+        for (ConsSpecification consSpecification : list) {
+            consSpecificationMap.put(consSpecification.getId(), consSpecification);
+        }
+        return consSpecificationMap;
+    }
+
+    /**
+     * 生成编号
+     *
+     * @param type
+     * @return
+     */
+    public String getNo(Integer type, Object obj) {
+
+        String number = null;
+
+        switch (DataType.getById(type)) {
+            case ASSET_MANAGE:
+                try {
+                    String code = (String) obj.getClass().getMethod("get" + firstCharUpperCase("assets_type_code")).invoke(obj);
+                    code = code.toUpperCase();
+                    number = String.format("%s%s%03d", code, getToday(),
+                            assetsManageMapper.selectCount(Wrappers.<AssetsManage>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                } catch (Exception e) {
+                    return StringUtils.EMPTY;
+                }
+                break;
+            case INBOUND_ORDER_NUMBER:
+                try {
+                    Integer source = (Integer) obj.getClass().getMethod("get" + firstCharUpperCase("inbound_type")).invoke(obj);
+                    if (null == source) {
+                        return StringUtils.EMPTY;
+                    }
+                    String code = source == 1 ? "SQ" : "SD";
+                    number = String.format("%s%s%s%03d", "RK", code, getToday(),
+                            inventoryManagementMapper.selectCount(Wrappers.<InventoryManagement>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                } catch (Exception e) {
+                    return StringUtils.EMPTY;
+                }
+                break;
+            case CHANGE:
+                //BG+变更单来源（变更申请：SQ；手动创建：SD）+日期+三位自增码（每日重置）
+                try {
+                    String source = (String) obj.getClass().getMethod("get" + firstCharUpperCase("source")).invoke(obj);
+                    if (StringUtils.isBlank(source)) {
+                        return StringUtils.EMPTY;
+                    }
+                    String code = G.CHANGE_APPLICATION.equals(source) ? "SQ" : "SD";
+                    number = String.format("%s%s%s%03d", "BG", code, getToday(),
+                            changeInfoMapper.selectCount(Wrappers.<ChangeInfo>query().eq("source", source).apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                } catch (Exception e) {
+                    return StringUtils.EMPTY;
+                }
+                break;
+            case DISPOSE_OF:
+                //处置单号：CZ+处置单来源（处置申请：SQ；盘亏：PK；盘点异常：PY）+日期+三位自增码（每日重置）
+                try {
+                    String source = (String) obj.getClass().getMethod("get" + firstCharUpperCase("source")).invoke(obj);
+                    if (StringUtils.isBlank(source)) {
+                        return StringUtils.EMPTY;
+                    }
+                    String code = null;
+                    if (G.DISPOSAL_APPLICATION.equals(source)) {
+                        code = "SQ";
+                    } else if (G.INVENTORY_LOSS_TREATMENT.equals(source)) {
+                        code = "PK";
+                    } else {
+                        code = "PY";
+                    }
+                    number = String.format("%s%s%s%03d", "CZ", code, getToday(),
+                            managementMapper.selectCount(Wrappers.<Management>query().eq("source", source).apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+
+                } catch (Exception e) {
+                    return StringUtils.EMPTY;
+                }
+                break;
+            case RECEIVE:
+                //领用单号生成  LY+日期+四位自增码
+                number = String.format("%s%s%04d", "LY", getToday(),
+                        receiveMapper.selectCount(Wrappers.<Receive>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case BORROW:
+                //借用单号生成 JY+日期+四位自增码（每日重置）
+                number = String.format("%s%s%04d", "JY", getToday(),
+                        borrowMapper.selectCount(Wrappers.<Borrow>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case PURCHASE_APPLY:
+                //采购单编号：CG+日期+三位自增码（每日重置）
+                number = String.format("%s%s%03d", "CG", getToday(),
+                        purchaseApplyMapper.selectCount(Wrappers.<PurchaseApply>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case INVENTORY_JOB:
+                //盘点单号：PD+日期+三位自增码（每日重置）
+                number = String.format("%s%s%03d", "PD", getToday(),
+                        inventoryJobMapper.selectCount(Wrappers.<InventoryJob>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case CARRYMANAGE_WX:
+                //外携单号：WX+日期+三位自增码（每日重置）
+                number = String.format("%s%s%03d", "WX", getToday(),
+                        manageMapper.selectCount(Wrappers.<CarryManage>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(creation_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case APPLYSINGLE_BX:
+                //报修单号：BX+日期+三位自增码（每日重置）
+                number = String.format("%s%s%03d", "BX", getToday(),
+                        singleMapper.selectCount(Wrappers.<ApplySingle>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case CONS_RECEIPT_CODE:
+                //耗材入库单编码：HR+日期+三位自增码
+                number = String.format("%s%s%03d", "HR", getToday(),
+                        consInventoryManagementMapper.selectCount(Wrappers.<ConsInventoryManagement>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case CONS_PURCHASE_ORDER_CODE:
+                //耗材采购单编码：HC+日期+三位自增码
+                number = String.format("%s%s%03d", "HC", getToday(),
+                        consPurchaseApplyMapper.selectCount(Wrappers.<ConsPurchaseApply>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+
+            case CONS_RECEIVE_CODE:
+                //耗材申领单编码：HL+日期+三位自增码
+                number = String.format("%s%s%03d", "HL", getToday(),
+                        consReceiveMapper.selectCount(Wrappers.<ConsReceive>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+
+            case CONS_RECEIVE_OUT_CODE:
+                //耗材申领出库单编码：HO+日期+三位自增码
+                number = String.format("%s%s%03d", "HO", getToday(),
+                        consReceiveMapper.selectCount(Wrappers.<ConsReceive>query().apply(true, "DATE_PART('day', NOW() - out_date)= 0")) + 1);
+                break;
+            case CONS_HAND_OUT_CODE:
+                //耗材手动出库单编码：HH+日期+三位自增码
+                number = String.format("%s%s%03d", "HH", getToday(),
+                        consHandworkMapper.selectCount(Wrappers.<ConsHandwork>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case CONS_WXZC_CODE:
+                //固定资产维修编码：WH+日期+三位自增码
+                number = String.format("%s%s%03d", "WH", getToday(),
+                        repairApplyMapper.selectCount(Wrappers.<RepairApply>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case ENTER_NUMBER:
+                number = String.format("%s%s%03d", "RK", getToday(),
+                        enterWarehouseMapper.selectCount(Wrappers.<WarehousingEnter>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            case DELIVER_NUMBER:
+                number = String.format("%s%s%03d", "CK", getToday(),
+                        deliveryWarehouseMapper.selectCount(Wrappers.<WarehousingDelivery>query().apply(true, "to_char(NOW(), 'yyyy-MM-dd') =  to_char(create_time, 'yyyy-MM-dd')")) + 1);
+                break;
+            default:
+                break;
+
+        }
+
+        return number;
+    }
+
+    /**
+     * 时间格式化yyyyMMdd
+     *
+     * @return
+     */
+    public static String getToday() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        return dateFormat.format(new Date());
+    }
+
+    /**
+     * 判断对象是否存在,判断对象属性是否存在,如果存在则返回对象属性,否则返回空字符串
+     *
+     * @param map       例如:Map<Integer, SysUser>
+     * @param mapKey    例如:Integer
+     * @param fieldName 例如:'user_name','login_name'
+     */
+    public String getValue(Map<Integer, ?> map, Integer mapKey, String fieldName) {
+        if (map == null || mapKey == null || StringUtils.isBlank(fieldName)) {
+            return "";
+        }
+        Object obj = map.get(mapKey);
+        if (obj == null) {
+            return "";
+        }
+        try {
+            Object value = obj.getClass().getMethod("get" + firstCharUpperCase(fieldName)).invoke(obj);
+            if (value != null) {
+                return value.toString();
+            }
+        } catch (Exception e) {
+            return "";
+        }
+        return "";
+    }
+
+    public static String firstCharUpperCase(String s) {
+        if (s == null || "".equals(s)) {
+            return ("");
+        }
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    /**
+     * 时间格式化yyyyMM
+     *
+     * @return
+     */
+    public static String getTodayMonth() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMM");
+        return dateFormat.format(new Date());
+    }
+
+
+//    public static void main(String[] args) {
+//        CommonDataMap commonDataMap = new CommonDataMap();
+//        List<SysUser> list = new ArrayList<>();
+//        for( int i = 0; i < 5; i++) {
+//            SysUser sysUser = new SysUser();
+//            sysUser.setId(i+1);
+//            sysUser.setUser_name("zhangdequan" + i);
+//            list.add(sysUser);
+//        }
+//        Map<Integer, SysUser> userMap = Maps.newHashMap();
+//        for (SysUser sysUser : list) {
+//            userMap.put(sysUser.getId(), sysUser);
+//        }
+//        String as = commonDataMap.getValue(userMap, 3, "user_name");
+//        System.out.println("value:  " + as);
+//    }
+
+}

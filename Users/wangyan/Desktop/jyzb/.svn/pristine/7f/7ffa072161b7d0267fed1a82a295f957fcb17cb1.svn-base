@@ -1,0 +1,143 @@
+package com.jsdc.rfid.controller;
+
+import cn.dev33.satoken.stp.StpUtil;
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.jsdc.core.base.BaseController;
+import com.jsdc.rfid.common.aop.logaop.LogInfo;
+import com.jsdc.rfid.enums.LogEnums;
+import com.jsdc.rfid.model.SysDepartment;
+import com.jsdc.rfid.model.SysUser;
+import com.jsdc.rfid.service.SysDepartmentService;
+import com.jsdc.rfid.service.SysPermissionService;
+import com.jsdc.rfid.service.SysUserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import vo.ResultInfo;
+
+import java.util.List;
+
+@Controller
+@RequestMapping("/")
+public class MainController extends BaseController {
+
+    @Autowired
+    private SysUserService userService;
+    @Autowired
+    private SysPermissionService permissionService;
+    @Autowired
+    private SysUserService sysUserService;
+    @Autowired
+    private SysDepartmentService sysDepartmentService;
+
+    /**
+     * 登陆
+     *
+     * @param consumer
+     * @param cypher
+     * @return
+     */
+    @RequestMapping(value = "login.do", method = RequestMethod.POST)
+    @ResponseBody
+    @LogInfo(LogEnums.LOG_LOGIN)
+    public ResultInfo loginPost(String consumer, String cypher) {
+        JSONObject jsonObject = new JSONObject();
+        if (empty(consumer)) {
+            return ResultInfo.error("用户名不能为空");
+        }
+        if (empty(cypher)) {
+            return ResultInfo.error("密码不能为空");
+        }
+        if (notEmpty(consumer) && notEmpty(cypher)) {
+            if (userService.login(consumer, cypher)) {
+                SysUser user = userService.getUser();
+                //部门验证
+                List<SysDepartment> sysDepartmentList = sysDepartmentService.selectList(Wrappers.<SysDepartment>lambdaQuery().eq(SysDepartment::getId, user.getDepartment()).eq(SysDepartment::getIs_del, "0"));
+                if (sysDepartmentList == null || sysDepartmentList.size() == 0) {
+                    return ResultInfo.error("请联系管理员，配置组织架构！");
+                }
+
+                StpUtil.login(user.getId());
+                StpUtil.getSession().set(user.getId().toString(), user);
+                jsonObject.put("accessToken", StpUtil.getTokenValue());
+                jsonObject.put("user", user);
+                jsonObject.put("roles", permissionService.getTree(user.getPost()));
+                jsonObject.put("success", true);
+                jsonObject.put("msg", "登录成功");
+            } else {
+                return ResultInfo.error("用户名或密码错误");
+            }
+        }
+        return ResultInfo.success(jsonObject, "登录");
+    }
+
+    /**
+     * 登陆
+     *
+     * @param consumer
+     * @return
+     */
+    @RequestMapping(value = "loginNumber.do", method = RequestMethod.POST)
+    @ResponseBody
+    @LogInfo(LogEnums.LOG_LOGIN)
+    public ResultInfo loginNumber(String consumer) {
+        JSONObject jsonObject = new JSONObject();
+        if (empty(consumer)) {
+            return ResultInfo.error("用户名不能为空");
+        }
+
+        if (notEmpty(consumer)) {
+            if (userService.login(consumer)) {
+                SysUser user = userService.getUser();
+                StpUtil.login(user.getId());
+                StpUtil.getSession().set(user.getId().toString(), user);
+                jsonObject.put("accessToken", StpUtil.getTokenValue());
+                jsonObject.put("user", user);
+                jsonObject.put("roles", permissionService.getTree(user.getPost()));
+                jsonObject.put("success", true);
+                jsonObject.put("msg", "登录成功");
+            } else {
+                return ResultInfo.error("用户名不存在");
+            }
+        }
+        return ResultInfo.success(jsonObject, "登录");
+    }
+
+
+    @RequestMapping(value = "getLoginIdByToken.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo getLoginIdByToken() {
+        Object id = StpUtil.getLoginIdByToken(StpUtil.getTokenValue());
+        if (id == null) {
+            return ResultInfo.error("未登录");
+        } else {
+            SysUser user = sysUserService.selectById(id + "");
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("accessToken", StpUtil.getTokenValue());
+            if (null != user.getDepartment()) {
+                String dept_name = sysDepartmentService.selectById(user.getDepartment()).getDept_name();
+                user.setDept_name(dept_name);
+            }
+            jsonObject.put("user", user);
+            jsonObject.put("roles", permissionService.getTree(user.getPost()));
+            return ResultInfo.success(jsonObject);
+        }
+    }
+
+    /**
+     * 登出
+     *
+     * @return
+     */
+    @PostMapping("logout.do")
+    @ResponseBody
+    public ResultInfo logout() {
+        StpUtil.logout();
+        return ResultInfo.success("退出登录");
+    }
+
+}

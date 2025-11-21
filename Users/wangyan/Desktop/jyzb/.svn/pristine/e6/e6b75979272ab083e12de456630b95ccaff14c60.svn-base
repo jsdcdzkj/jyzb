@@ -1,0 +1,357 @@
+package com.jsdc.rfid.service.warehouse.impl;
+
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.map.MapUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.google.api.client.util.Lists;
+import com.jsdc.rfid.dto.WarehousingStockDto;
+import com.jsdc.rfid.mapper.warehouse.StatisticsWarehouseMapper;
+import com.jsdc.rfid.model.AssetsType;
+import com.jsdc.rfid.model.SysDepartment;
+import com.jsdc.rfid.model.warehouse.WarehousingStock;
+import com.jsdc.rfid.model.warehouse.WarehousingStockCarryOver;
+import com.jsdc.rfid.model.warehouse.WarehousingStockDetail;
+import com.jsdc.rfid.service.SysDepartmentService;
+import com.jsdc.rfid.service.SysUserService;
+import com.jsdc.rfid.service.warehouse.StatisticsWarehouseService;
+import com.jsdc.rfid.utils.CommonDataTools;
+import com.jsdc.rfid.vo.EquipNumStatisticsVo;
+import com.jsdc.rfid.vo.EquipTypeStatisticsVo;
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.*;
+import java.util.stream.Collectors;
+
+
+@Service
+@Transactional
+@AllArgsConstructor
+public class StatisticsWarehouseServiceImpl implements StatisticsWarehouseService {
+
+    public static Map<Integer,String> carryOverMap = new HashMap<Integer,String>(){{
+       put(0,"库存");
+       put(1,"使用");
+       put(2,"处置");
+    }};
+
+    public static Map<String,String> typeConvertMap = new HashMap<String,String>(){{
+        put("1","通用装备");
+        put("2","特种装备");
+        put("3","应急库物资");
+        put("4","车辆管理");
+    }};
+
+    private final StatisticsWarehouseMapper statisticsWarehouseMapper;
+
+    private final CommonDataTools commonDataTools;
+
+    @Autowired
+    private SysDepartmentService departmentService;
+
+    @Autowired
+    private SysUserService sysUserService;
+
+    private final SysDepartmentService sysDepartmentService;
+    @Override
+    public EquipNumStatisticsVo equipNum(String type) {
+        EquipNumStatisticsVo equipNumStatisticsVo = new EquipNumStatisticsVo();
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        Map<String, List<String>> equipTypeMap = commonDataTools.getAssetsTypeNames(type);
+        if(!StringUtils.isEmpty(type)){
+            type = typeConvertMap.get(type);
+        }
+        //库存和使用装备统计
+        WarehousingStockDto warehousingStockDto = new WarehousingStockDto();
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d->d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        List<WarehousingStockDetail> equipNumList = statisticsWarehouseMapper.equipNumStatistics(warehousingStockDto);
+        List<String> equipTypeNames = StringUtils.isEmpty(type)?null:equipTypeMap.get(type);
+        Optional.ofNullable(equipNumList).orElse(Lists.newArrayList()).stream().forEach(e->{
+            String equipType = assetsMap.get(e.getEquip_type())!=null?assetsMap.get(e.getEquip_type()).getAssets_type_name():"";
+            if(equipTypeNames!=null&&!equipTypeNames.contains(equipType))
+                return;
+            if(e.getEquip_status().equals(0)){
+                equipNumStatisticsVo.setStockNum(equipNumStatisticsVo.getStockNum()+(e.getEquip_in_num()-e.getEquip_out_num()));
+                equipNumStatisticsVo.setTotalNum(equipNumStatisticsVo.getTotalNum()+(e.getEquip_in_num()-e.getEquip_out_num()));
+            }
+            if(e.getEquip_status().equals(1)){
+                equipNumStatisticsVo.setUseNum(equipNumStatisticsVo.getUseNum()+(e.getEquip_in_num()-e.getEquip_out_num()));
+                equipNumStatisticsVo.setTotalNum(equipNumStatisticsVo.getTotalNum()+(e.getEquip_in_num()-e.getEquip_out_num()));
+            }
+        });
+        //处置装备
+        warehousingStockDto.setStock_type(3);
+        List<WarehousingStockDetail> disposeNumList = statisticsWarehouseMapper.equipNumStatistics(warehousingStockDto);
+        Optional.ofNullable(disposeNumList).orElse(Lists.newArrayList()).stream().forEach(e->{
+            String equipType = assetsMap.get(e.getEquip_type())!=null?assetsMap.get(e.getEquip_type()).getAssets_type_name():"";
+            if(equipTypeNames!=null&&!equipTypeNames.contains(equipType))
+                return;
+            equipNumStatisticsVo.setDisposeNum(equipNumStatisticsVo.getDisposeNum()+e.getEquip_out_num());
+        });
+
+        //过期装备统计
+        List<WarehousingStockDetail> expiredList = statisticsWarehouseMapper.expiredEquipNumStatistics(warehousingStockDto);
+        Optional.ofNullable(expiredList).orElse(Lists.newArrayList()).stream().forEach(e->{
+            String equipType = assetsMap.get(e.getEquip_type())!=null?assetsMap.get(e.getEquip_type()).getAssets_type_name():"";
+            if(equipTypeNames!=null&&!equipTypeNames.contains(equipType))
+                return;
+            equipNumStatisticsVo.setExpiredNum(equipNumStatisticsVo.getExpiredNum()+(e.getEquip_in_num()-e.getEquip_out_num()));
+        });
+        //临期装备统计
+        List<WarehousingStockDetail> criticalList = statisticsWarehouseMapper.criticalEquipNumStatistics(warehousingStockDto);
+        Optional.ofNullable(criticalList).orElse(Lists.newArrayList()).stream().forEach(e->{
+            String equipType = assetsMap.get(e.getEquip_type())!=null?assetsMap.get(e.getEquip_type()).getAssets_type_name():"";
+            if(equipTypeNames!=null&&!equipTypeNames.contains(equipType))
+                return;
+            equipNumStatisticsVo.setCriticalNum(equipNumStatisticsVo.getCriticalNum()+(e.getEquip_in_num()-e.getEquip_out_num()));
+        });
+        return equipNumStatisticsVo;
+    }
+
+    @Override
+    public List<Map<String, List<Map<String, Object>>>> equipNumList(String type) {
+        // 获取设备类型名称映射
+        Map<String, List<String>> equipTypeMap = commonDataTools.getAssetsTypeNames(type);
+
+        // 将 type 进行转换
+        if (!StringUtils.isEmpty(type)) {
+            type = typeConvertMap.get(type);
+        }
+
+        // 获取今天日期和部门ID列表
+        Date today = new Date();
+        WarehousingStockDto warehousingStockDto = prepareWarehousingStockDto(today);
+
+        // 获取日期范围 (按月)
+        List<DateTime> rangeList = DateUtil.rangeToList(DateUtil.beginOfYear(today), today, DateField.MONTH);
+        List<Map<String, List<Map<String, Object>>>> resultList = initializeResultList(rangeList);
+
+        // 获取资产类型映射和设备类型名称
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        List<String> equipTypeNames = StringUtils.isEmpty(type) ? null : equipTypeMap.get(type);
+
+        // 查询库存数据
+        List<WarehousingStockCarryOver> carryOvers = statisticsWarehouseMapper.carryOverStatistics(warehousingStockDto);
+
+        // 处理库存数据
+        carryOvers.forEach(c -> {
+            String equipType = getEquipTypeName(assetsMap, c);
+            if (!isEquipTypeValid(equipTypeNames, equipType)) return;
+
+            String key = c.getYear().toString().concat("-").concat(c.getMonth().toString());
+
+            // 查找对应月份的 map
+            resultList.stream()
+                    .filter(m -> m.get(key) != null)
+                    .findFirst()
+                    .ifPresent(monthMap -> updateMonthMap(monthMap.get(key), c));
+        });
+
+        return resultList;
+    }
+
+    private WarehousingStockDto prepareWarehousingStockDto(Date today) {
+        WarehousingStockDto warehousingStockDto = new WarehousingStockDto();
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment())
+                .stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        warehousingStockDto.setYear(DateUtil.year(today));
+        return warehousingStockDto;
+    }
+
+    private List<Map<String, List<Map<String, Object>>>> initializeResultList(List<DateTime> rangeList) {
+        List<Map<String, List<Map<String, Object>>>> resultList = new ArrayList<>();
+        rangeList.forEach(d -> {
+            Map<String, List<Map<String, Object>>> monthMap = new HashMap<>();
+            List<Map<String, Object>> monthList = initializeMonthList();
+            monthMap.put(DateUtil.format(d, "yyyy-M"), monthList);
+            resultList.add(monthMap);
+        });
+        return resultList;
+    }
+
+    private List<Map<String, Object>> initializeMonthList() {
+        List<Map<String, Object>> monthList = new ArrayList<>();
+        carryOverMap.forEach((status, desc) -> {
+            Map<String, Object> statusMap = new HashMap<>(4);
+            statusMap.put("status", desc);
+            statusMap.put("num", 0);
+            monthList.add(statusMap);
+        });
+        return monthList;
+    }
+
+    private String getEquipTypeName(Map<Integer, AssetsType> assetsMap, WarehousingStockCarryOver c) {
+        return assetsMap.getOrDefault(c.getEquip_type(), new AssetsType()).getAssets_type_name();
+    }
+
+    private boolean isEquipTypeValid(List<String> equipTypeNames, String equipType) {
+        return CollectionUtils.isEmpty(equipTypeNames) || equipTypeNames.contains(equipType);
+    }
+
+    private void updateMonthMap(List<Map<String, Object>> statusList, WarehousingStockCarryOver c) {
+        statusList.forEach(s -> {
+            if (MapUtil.getStr(s, "status").equals(carryOverMap.get(c.getEquip_status()))) {
+                s.put("num", MapUtil.getInt(s, "num") + c.getEquip_num());
+            }
+        });
+    }
+
+
+    @Override
+    public Map<String,Object> equipType(String type,Integer equip_status) {
+        Map<String, List<String>> equipTypeMap = commonDataTools.getAssetsTypeNames(type);
+        if(!StringUtils.isEmpty(type)){
+            type = typeConvertMap.get(type);
+        }
+        String type1 = type;
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        WarehousingStockDto warehousingStockDto = new WarehousingStockDto();
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d->d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        warehousingStockDto.setEquip_status(equip_status);
+        List<WarehousingStockDetail> equipTypeList = statisticsWarehouseMapper.equipTypeStatistics(warehousingStockDto);
+        Map<String,Object> resultMap = new HashMap<String,Object>(4){{
+            put("total",0);
+        }};
+        List<EquipTypeStatisticsVo> list = new ArrayList<>();
+        Optional.ofNullable(equipTypeList).orElse(Lists.newArrayList()).stream().forEach(t->{
+            equipTypeMap.forEach((typeName,elist)->{
+                if(!StringUtils.isEmpty(type1)&&!typeName.equals(type1))
+                    return;
+                String equipType = assetsMap.get(t.getEquip_type())!=null?assetsMap.get(t.getEquip_type()).getAssets_type_name():"";
+                if(elist.contains(equipType)){
+                    EquipTypeStatisticsVo equipTypeStatisticsVo = new EquipTypeStatisticsVo();
+                    equipTypeStatisticsVo.setEquipNum(t.getEquip_in_num()-t.getEquip_out_num());
+                    equipTypeStatisticsVo.setEquipType(equipType);
+                    equipTypeStatisticsVo.setType(typeName);
+                    list.add(equipTypeStatisticsVo);
+                    resultMap.put("total",MapUtil.getInt(resultMap,"total")+equipTypeStatisticsVo.getEquipNum());
+                }
+            });
+        });
+        Map<String,List<EquipTypeStatisticsVo>> typeMap = list.stream().collect(Collectors.groupingBy(EquipTypeStatisticsVo::getType));
+        BigDecimal total = BigDecimal.valueOf(MapUtil.getInt(resultMap,"total"));
+        List<EquipTypeStatisticsVo> resultList = new ArrayList<>();
+        if(!StringUtils.isEmpty(type)){
+            List<EquipTypeStatisticsVo> typeList = typeMap.get(type);
+            if (typeList != null) {
+                // 计算比例并设置
+                BigDecimal totalValue = total.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : total;
+
+                typeList.forEach(t -> {
+                    BigDecimal rate = BigDecimal.ZERO;
+                    if (totalValue.compareTo(BigDecimal.ZERO) > 0) {
+                        rate = BigDecimal.valueOf(t.getEquipNum()).divide(totalValue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                    }
+                    t.setRate(rate.stripTrailingZeros().toPlainString() + "%");
+                });
+
+                resultList.addAll(typeList);
+            }
+        }else{
+            equipTypeMap.forEach((typeName,elist)->{
+                EquipTypeStatisticsVo equipTypeStatisticsVo = new EquipTypeStatisticsVo();
+                equipTypeStatisticsVo.setEquipType(typeName);
+                List<EquipTypeStatisticsVo> typeList = typeMap.get(typeName);
+                if(!CollectionUtils.isEmpty(typeList)){
+                    equipTypeStatisticsVo.setEquipNum(typeList.stream().map(EquipTypeStatisticsVo::getEquipNum).reduce(Integer::sum).get());
+                }else{
+                    equipTypeStatisticsVo.setEquipNum(0);
+                }
+                BigDecimal rate = total.compareTo(BigDecimal.ZERO)==0?BigDecimal.ZERO:BigDecimal.valueOf(equipTypeStatisticsVo.getEquipNum()).divide(total,4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                equipTypeStatisticsVo.setRate(rate.stripTrailingZeros().toPlainString()+"%");
+                resultList.add(equipTypeStatisticsVo);
+            });
+        }
+        resultMap.put("equipTypeList",resultList);
+        return resultMap;
+    }
+
+    @Override
+    public Map<String,List<Map<String,Object>>> equipDept(String type) {
+        Map<String, List<String>> equipTypeMap = commonDataTools.getAssetsTypeNames(type);
+        if(!StringUtils.isEmpty(type)){
+            type = typeConvertMap.get(type);
+        }
+        String type1 = type;
+        SysDepartment sysDepartment = new SysDepartment();
+        sysDepartment.setId(sysUserService.getUser().getDepartment());
+        JSONArray deptArray = departmentService.getTree(sysDepartment);
+        //JSONObject deptObj = deptArray.getJSONObject(0);
+        //JSONArray childDept = deptObj.getJSONArray("children");
+        Map<String,List<Map<String,Object>>> deptResultMap = new HashMap<String,List<Map<String,Object>>>(4);
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        List<String> equipTypeNames = StringUtils.isEmpty(type)?null:equipTypeMap.get(type);
+        WarehousingStockDto warehousingStockDto = new WarehousingStockDto();
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d->d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        List<WarehousingStockDetail> equipDeptList = statisticsWarehouseMapper.equipDeptStatistics(warehousingStockDto);
+        Map<Integer,List<WarehousingStockDetail>> statusMap = Optional.ofNullable(equipDeptList).orElse(Lists.newArrayList()).stream().collect(Collectors.groupingBy(WarehousingStockDetail::getEquip_status));
+        statusMap.forEach((status,list)->{
+            List<Map<String,Object>> deptList = new ArrayList<>();
+            for (Object childObj: deptArray) {
+                JSONObject obj = (JSONObject)childObj;
+                Map<String,Object> deptMap = new HashMap<>();
+                deptMap.put("name",obj.getString("title"));
+                Integer deptId = obj.getInteger("id");
+                List<Integer> childIds = new ArrayList<>();
+                if(obj.getJSONArray("children")!=null){
+                    childIds.addAll(obj.getJSONArray("children").stream().map(j->((JSONObject)j).getInteger("id")).collect(Collectors.toList()));
+                }
+                List<WarehousingStockDetail> deptEquipList = list.stream().filter(l->{
+                    //匹配部门及子类
+                    if(l.getDept_id().equals(deptId))
+                        return true;
+                    if(childIds.contains(l.getDept_id()))
+                        return true;
+                    return false;}).map(l->{
+                        l.setEquip_type_name(assetsMap.get(l.getEquip_type())!=null?assetsMap.get(l.getEquip_type()).getAssets_type_name():"");
+                        l.setEquip_num(l.getEquip_in_num()-l.getEquip_out_num());
+                        return l;})
+                        .collect(Collectors.toList());
+                deptMap.put("deptEquipList",deptEquipList);
+                deptList.add(deptMap);
+            }
+            deptResultMap.put(status==0?"stock":"use",deptList);
+        });
+        deptResultMap.forEach((status,deptList)->{
+            deptList.stream().forEach(d->{
+                List<EquipTypeStatisticsVo> deptStatistics = new ArrayList<>();
+                List<WarehousingStockDetail> deptEquipList = (List<WarehousingStockDetail>)d.get("deptEquipList");
+                if(!StringUtils.isEmpty(type1)){
+                    equipTypeNames.stream().forEach(t->{
+                        EquipTypeStatisticsVo equipTypeStatisticsVo = new EquipTypeStatisticsVo();
+                        equipTypeStatisticsVo.setEquipType(t);
+                        List<WarehousingStockDetail> filterList = deptEquipList.stream().filter(dt->t.equals(dt.getEquip_type_name())).collect(Collectors.toList());
+                        equipTypeStatisticsVo.setEquipNum(CollectionUtils.isEmpty(filterList)?0:filterList.stream().map(dt->dt.getEquip_num()).reduce(Integer::sum).get());
+                        deptStatistics.add(equipTypeStatisticsVo);
+                    });
+                }else{
+                    equipTypeMap.forEach((typeName,elist)->{
+                        EquipTypeStatisticsVo equipTypeStatisticsVo = new EquipTypeStatisticsVo();
+                        equipTypeStatisticsVo.setEquipType(typeName);
+                        List<WarehousingStockDetail> filterList = deptEquipList.stream().filter(dt->elist.contains(dt.getEquip_type_name())).collect(Collectors.toList());
+                        equipTypeStatisticsVo.setEquipNum(CollectionUtils.isEmpty(filterList)?0:filterList.stream().map(dt->dt.getEquip_num()).reduce(Integer::sum).get());
+                        deptStatistics.add(equipTypeStatisticsVo);
+                    });
+                }
+                d.put("deptEquipList",deptStatistics);
+            });
+        });
+        return deptResultMap;
+    }
+
+}

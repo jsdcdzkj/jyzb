@@ -1,0 +1,9 @@
+package com.jsdc.rfid.dao;
+
+import com.jsdc.core.base.BaseDao;
+import com.jsdc.rfid.model.ProcessConfigInfo;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public class ProcessConfigInfoDao extends BaseDao<ProcessConfigInfo> {
+}

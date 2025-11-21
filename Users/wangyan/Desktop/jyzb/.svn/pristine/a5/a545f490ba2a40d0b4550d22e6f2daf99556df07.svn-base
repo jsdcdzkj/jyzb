@@ -1,0 +1,119 @@
+package com.jsdc.rfid.controller.warehouse;
+
+import cn.hutool.core.collection.CollectionUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.github.pagehelper.PageInfo;
+import com.jsdc.rfid.model.warehouse.WarehousingEnter;
+import com.jsdc.rfid.service.warehouse.EnterWarehouseService;
+import com.jsdc.rfid.utils.CascadeSelectTool;
+import net.hasor.utils.io.output.ByteArrayOutputStream;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import vo.ResultInfo;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.annotation.Resource;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 入库管理
+ */
+@Controller
+@RequestMapping("/enterWarehouse")
+public class EnterWarehouseController {
+
+
+    @Resource
+    private EnterWarehouseService enterWarehouseService;
+
+
+    /**
+     * 列表
+     */
+    @RequestMapping(value = "toList.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo toList(@RequestParam(defaultValue = "1", value = "page") Integer pageIndex,
+                             @RequestParam(defaultValue = "10", value = "limit") Integer pageSize,
+                             WarehousingEnter warehousingEnter) {
+        PageInfo<WarehousingEnter> page = enterWarehouseService.pageQuery(pageIndex, pageSize,warehousingEnter);
+        return ResultInfo.success(page);
+    }
+
+    /**
+     * 新增
+     */
+    @RequestMapping(value = "add.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo add(@RequestBody WarehousingEnter warehousingEnter){
+        enterWarehouseService.add(warehousingEnter);
+        return ResultInfo.success();
+    }
+
+    /**
+     * 详情
+     */
+    @RequestMapping(value = "detail.do", method = RequestMethod.GET)
+    @ResponseBody
+    public ResultInfo detail(Integer id){
+        return ResultInfo.success(enterWarehouseService.detail(id));
+    }
+
+
+    /**
+     * 导入
+     */
+    @RequestMapping(value = "/toImport.do",method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo toAssetImport(Integer fileId,String is_save){
+        return enterWarehouseService.toImport(fileId,is_save);
+    }
+
+
+    /**
+     * 模板下载
+     * @param response
+     */
+    @RequestMapping(value = "/toExportTemplate.do", method = RequestMethod.GET)
+    @ResponseBody
+    public void excelTemplate(HttpServletResponse response) throws IOException {
+        String fileName = "入库管理模板.xlsx";
+        // 将工作簿写入输出流
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        XSSFWorkbook workbook = excelTemplate();
+        workbook.write(outputStream);
+        // 设置响应头，告诉浏览器返回的是一个Excel文件
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
+        // 将Excel文件写入响应的输出流
+        try (OutputStream outStream = response.getOutputStream()) {
+            outputStream.writeTo(outStream);
+            outStream.flush();
+        }
+    }
+
+    public XSSFWorkbook excelTemplate() {
+        Map<String, List<String>> equipmentMap = enterWarehouseService.excelTypeTemplate();
+        List<Integer> selectTypeColList = CollectionUtil.newArrayList(0,1);
+        Map<String, List<String>> statustMap = enterWarehouseService.excelStatusTemplate();
+        List<Integer> selectStatusColList = CollectionUtil.newArrayList(6,7);
+        XSSFWorkbook book = new XSSFWorkbook();
+        List<String> heads = Arrays.asList("装备类型", "装备名称", "型号", "数量", "保质年限（月）", "出厂日期（如：2020/1/1）", "状态", "归属对象");
+        CascadeSelectTool cascadeSelectTool = new CascadeSelectTool(book)
+                .createSheet("入库管理")
+                .createHead(heads)
+                .createEmptyList(20, heads.size())
+                .createFirstRow(1)
+                .setCascadeDropDownBox(selectTypeColList, 2, equipmentMap.size(), equipmentMap)  // 设置装备类型级联
+                .setCascadeDropDownBox(selectStatusColList, equipmentMap.size() + 2,statustMap.size() + equipmentMap.size() + 2, statustMap);  // 设置状态级联
+
+
+        return cascadeSelectTool.getWorkbook();
+    }
+
+}

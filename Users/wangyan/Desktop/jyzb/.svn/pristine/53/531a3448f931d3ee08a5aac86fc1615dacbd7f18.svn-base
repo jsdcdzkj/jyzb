@@ -1,0 +1,545 @@
+package com.jsdc.rfid.service.warehouse.impl;
+
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.poi.excel.ExcelReader;
+import cn.hutool.poi.excel.ExcelUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.jsdc.rfid.common.G;
+import com.jsdc.rfid.dto.WarehousingStockDto;
+import com.jsdc.rfid.enums.DataType;
+import com.jsdc.rfid.enums.EquipStatusEnums;
+import com.jsdc.rfid.mapper.FileManageMapper;
+import com.jsdc.rfid.mapper.warehouse.EnterWarehouseDetailMapper;
+import com.jsdc.rfid.mapper.warehouse.EnterWarehouseMapper;
+import com.jsdc.rfid.mapper.warehouse.WarehouseStockCarryOverMapper;
+import com.jsdc.rfid.model.*;
+import com.jsdc.rfid.model.warehouse.*;
+import com.jsdc.rfid.service.AssetsTypeService;
+import com.jsdc.rfid.service.SysDepartmentService;
+import com.jsdc.rfid.service.SysUserService;
+import com.jsdc.rfid.service.WarehouseService;
+import com.jsdc.rfid.service.warehouse.EnterWarehouseDetailService;
+import com.jsdc.rfid.service.warehouse.EnterWarehouseService;
+import com.jsdc.rfid.service.warehouse.SystemNoticeService;
+import com.jsdc.rfid.service.warehouse.WarehouseStockService;
+import com.jsdc.rfid.utils.CommonDataTools;
+import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.DateUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import vo.ResultInfo;
+
+import javax.annotation.Resource;
+import java.io.File;
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class EnterWarehouseServiceImpl extends ServiceImpl<EnterWarehouseMapper, WarehousingEnter> implements EnterWarehouseService {
+    @Autowired
+    private CommonDataTools commonDataTools;
+    @Autowired
+    private SysUserService sysUserService;
+    @Autowired
+    private EnterWarehouseDetailMapper enterWarehouseDetailMapper;
+    @Autowired
+    private EnterWarehouseDetailService enterWarehouseDetailService;
+    @Autowired
+    private WarehouseStockService warehouseStockService;
+    @Autowired
+    private WarehouseStockDetailServiceImpl warehouseStockDetailServiceImpl;
+    @Autowired
+    private SysDepartmentService sysDepartmentService;
+    @Autowired
+    private WarehouseStockCarryOverMapper warehouseStockCarryOverMapper;
+    @Autowired
+    private SystemNoticeService systemNoticeService;
+    @Autowired
+    private EnterWarehouseMapper enterWarehouseMapper;
+    @Autowired
+    private AssetsTypeService assetsTypeService;
+    @Autowired
+    private WarehouseService warehouseService;
+    @Autowired
+    private FileManageMapper fileManageMapper;
+
+    @Value("${file.upload-path}")
+    private String uploadPath;
+    @Autowired
+    private WarehouseStockServiceImpl warehouseStockServiceImpl;
+
+
+    @Override
+    public PageInfo<WarehousingEnter> pageQuery(Integer pageIndex, Integer pageSize, WarehousingEnter warehousingEnter) {
+        // 构建查询条件
+        QueryWrapper<WarehousingEnter> queryWrapper = new QueryWrapper<>();
+
+        // 添加条件，避免空值
+        if (StringUtils.isNotEmpty(warehousingEnter.getEnter_no())) {
+            queryWrapper.like("enter_no", warehousingEnter.getEnter_no());
+        }
+
+        // 时间区间查询合并为between条件
+        if (StringUtils.isNotEmpty(warehousingEnter.getEnter_start_time()) && StringUtils.isNotEmpty(warehousingEnter.getEnter_end_time())) {
+            queryWrapper.between("enter_time", warehousingEnter.getEnter_start_time(), warehousingEnter.getEnter_end_time());
+        } else if (StringUtils.isNotEmpty(warehousingEnter.getEnter_start_time())) {
+            queryWrapper.ge("enter_time", warehousingEnter.getEnter_start_time());
+        } else if (StringUtils.isNotEmpty(warehousingEnter.getEnter_end_time())) {
+            queryWrapper.le("enter_time", warehousingEnter.getEnter_end_time());
+        }
+
+        // 添加常规过滤条件
+        queryWrapper.eq("is_del", "0");
+        // 获取部门ID
+        List<Integer> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment());
+        queryWrapper.in("dept_id", deptIds);
+
+        // 开始分页
+        PageHelper.startPage(pageIndex, pageSize, "create_time desc");
+        // 查询主表数据
+        List<WarehousingEnter> pageList = list(queryWrapper);
+
+        if (pageList.isEmpty()) {
+            return new PageInfo<>(pageList);
+        }
+
+        // 提取主键ID
+        List<Integer> ids = pageList.stream().map(WarehousingEnter::getId).collect(Collectors.toList());
+        // 获取明细数据和统计详情
+        List<Map> warehousingEnterDetails = enterWarehouseMapper.sumEquipNum(ids);
+
+        // 转换为 Map<Integer, Integer>，key 为 enter_id，value 为 equip_num
+        // 转换为 Map<Integer, Integer>，key 为 enter_id，value 为 equip_num
+        Map<Integer, Integer> equipNumMap = warehousingEnterDetails.stream().collect(
+                Collectors.toMap(
+                        detail -> ((Number) detail.get("enter_id")).intValue(),   // 提取 enter_id 作为 key，并将其转换为 Integer
+                        detail -> ((BigDecimal) detail.get("equip_num")).intValue()   // 提取 equip_num，转换为 BigDecimal 后取其 int 值
+                )
+        );
+
+        // 准备供应商和用户数据映射
+        Map<Integer, Supplier> supplierMap = commonDataTools.getSupplierMap();
+        Map<Integer, SysUser> sysUserMap = commonDataTools.getUserMap();
+
+        // 设置供应商名称和创建人名称和明细
+        pageList.forEach(w -> {
+            w.setEquip_num(equipNumMap.get(w.getId()));
+            w.setSupplier_name(Optional.ofNullable(supplierMap.get(w.getSupplier_id()))
+                    .map(Supplier::getSupplier_name)
+                    .orElse(""));
+            w.setCreate_user_name(Optional.ofNullable(sysUserMap.get(w.getCreate_user()))
+                    .map(SysUser::getUser_name)
+                    .orElse(""));
+        });
+
+        // 返回分页结果
+        return new PageInfo<>(pageList);
+    }
+
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void add(WarehousingEnter bean, String isExport) {
+
+
+        //入账时间校验
+//        Integer year = DateUtil.year(bean.getEnter_time());
+//        Integer month = DateUtil.month(bean.getEnter_time()) + 1;
+        //校验当前月是否已有结转  可以修改删除，去除逻辑
+//        WarehousingStockDto warehousingStockDto = new WarehousingStockDto();
+//        warehousingStockDto.setYear(year);
+//        warehousingStockDto.setMonth(month);
+//        List<String> deptIds = sysDepartmentService.getFjDept(sysUserService.getUser().getDepartment()).stream().map(d->d.toString()).collect(Collectors.toList());
+//        if(CollectionUtils.isEmpty(deptIds)){
+//            deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d->d.toString()).collect(Collectors.toList());
+//        }
+//        warehousingStockDto.setDeptIds(deptIds);
+//        List<WarehousingStockCarryOver> carryOvers = warehouseStockCarryOverMapper.carryOverList(warehousingStockDto);
+//        if(!CollectionUtils.isEmpty(carryOvers)){
+//            throw new RuntimeException("当月结转数据已生成,无法入库!");
+//        }
+
+
+        //生成入库单号
+        bean.setEnter_no(commonDataTools.getNo(DataType.ENTER_NUMBER.getType(), null));
+        bean.setIs_del(String.valueOf(0));
+        bean.setCreate_time(new Date());
+        bean.setCreate_user(sysUserService.getUser().getId());
+        bean.setDept_id(sysUserService.getUser().getDepartment());
+        if (null != bean.getBorrow_dept_id()) {
+            bean.setDept_id(bean.getBorrow_dept_id());
+        }
+
+        //入库导入
+        if(StringUtils.isNotEmpty(isExport) && "export".equals(isExport)){
+            bean.setDate_import(DateUtils.formatDate(new Date(), "yyyy-MM"));
+        }
+
+        save(bean);//保存主表
+        //保存从表
+        if(!CollectionUtils.isEmpty(bean.getEnterDetails())){
+            List<WarehousingEnterDetail> details = bean.getEnterDetails().stream().map(d->{
+                d.setEnter_no(bean.getEnter_no());
+                d.setEnter_id(bean.getId());
+                d.setIs_del(bean.getIs_del());
+                d.setCreate_time(bean.getCreate_time());
+                d.setCreate_user(bean.getCreate_user());
+                return d;
+            }).collect(Collectors.toList());
+            enterWarehouseDetailService.batchSave(details);
+        }
+        //库存计算
+        warehouseStockService.enterStock(bean, isExport);
+        systemNoticeService.addNotice("新增入库单"+bean.getEnter_no(),"入库");
+    }
+
+    @Override
+    public WarehousingEnter detail(Integer id) {
+        WarehousingEnter warehousingEnter = getById(id);
+        Map<Integer, Warehouse> warehouseMap = commonDataTools.getWarehouseMap();
+        Map<Integer, Supplier> supplierMap = commonDataTools.getSupplierMap();
+        Map<Integer, SysDict> dictMap = commonDataTools.getSysDictMap("unit");
+        //Map<String, AssetsType> assetsMap = commonDataTools.getAssetsTypeCodeMap();
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        Map<Integer, SysDepartment> deptMap = commonDataTools.getDeptMap();
+        //warehousingEnter.setEnter_type_name(EnterEnums.getDesc(warehousingEnter.getEnter_type()));
+        //warehousingEnter.setWarehouse_name(warehouseMap.get(warehousingEnter.getWarehouse_id())!=null?warehouseMap.get(warehousingEnter.getWarehouse_id()).getWarehouse_name():"");
+        warehousingEnter.setSupplier_name(supplierMap.get(warehousingEnter.getSupplier_id())!=null?supplierMap.get(warehousingEnter.getSupplier_id()).getSupplier_name():"");
+        //查询明细
+        QueryWrapper<WarehousingEnterDetail> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("enter_no",warehousingEnter.getEnter_no());
+        queryWrapper.eq("enter_id",warehousingEnter.getId());
+        queryWrapper.eq("is_del","0");
+        List<WarehousingEnterDetail> details = enterWarehouseDetailMapper.selectList(queryWrapper).stream().map(d->{
+            d.setEquip_type_name(assetsMap.get(d.getEquip_type())!=null?assetsMap.get(d.getEquip_type()).getAssets_type_name():"");
+            d.setEquip_name_desc(assetsMap.get(d.getEquip_name())!=null?assetsMap.get(d.getEquip_name()).getAssets_type_name():"");
+            d.setAssets_type_code(assetsMap.get(d.getEquip_name())!=null?assetsMap.get(d.getEquip_name()).getAssets_type_code():"");
+            d.setEquip_unit_name(dictMap.get(d.getEquip_unit())!=null?dictMap.get(d.getEquip_unit()).getLabel():"");
+            d.setEquip_status_desc(EquipStatusEnums.getDesc(d.getEquip_status()));
+            if(d.getWarehouse_id()!=null){
+                d.setWarehouse_name(warehouseMap.get(d.getWarehouse_id())!=null?warehouseMap.get(d.getWarehouse_id()).getWarehouse_name():"");
+            }
+            if(d.getUse_dept()!=null){
+                d.setUse_dept_name(deptMap.get(d.getUse_dept())!=null?deptMap.get(d.getUse_dept()).getDept_name():"");
+            }
+            return d;
+        }).collect(Collectors.toList());
+        warehousingEnter.setEnterDetails(details);
+        return warehousingEnter;
+    }
+
+    @Override
+    public Map<String, List<String>> excelTypeTemplate() {
+        Map<String, List<String>> equipmentMap = new LinkedHashMap<>();
+
+        // 一次性查询所有装备类型和装备名称
+        LambdaQueryWrapper<AssetsType> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AssetsType::getIs_del, G.ISDEL_NO);
+        List<AssetsType> assetsTypeList = assetsTypeService.selectList(wrapper);
+
+        // 将查询结果按Level分组
+        Map<Integer, String> equipmentTypeMap = assetsTypeList.stream()
+                .filter(type -> 1 == type.getLevel()) // 装备类型 level 1
+                .collect(Collectors.toMap(AssetsType::getId, AssetsType::getAssets_type_name));
+
+        Map<Integer, List<String>> equipmentNameListStr = assetsTypeList.stream()
+                .filter(name -> 2 == name.getLevel()) // 装备名称 level 2
+                .collect(Collectors.groupingBy(
+                        AssetsType::getParent_id, // 按 parent_id 分组
+                        Collectors.mapping(AssetsType::getAssets_type_name, Collectors.toList())
+                ));
+
+        // 添加装备类型到结果 map
+        equipmentMap.put("装备类型", new ArrayList<>(equipmentTypeMap.values()));
+
+        // 遍历装备类型，构建每个装备类型下的装备名称
+        equipmentTypeMap.forEach((supId, supName) -> {
+            List<String> commodityList = equipmentNameListStr.getOrDefault(supId, Collections.singletonList(""));
+            equipmentMap.put(supName, commodityList);
+        });
+
+        return equipmentMap;
+    }
+
+    @Override
+    public Map<String, List<String>> excelStatusTemplate() {
+        Map<String, List<String>> statusMap = new LinkedHashMap<>();
+        statusMap.put("状态", Arrays.asList("库存", "在用"));
+
+        List<String> warehouseNameList = new ArrayList<>();
+        List<Warehouse> warehouseList = warehouseService.getList(new Warehouse());
+        for (Warehouse warehouse : warehouseList) {
+            warehouseNameList.add(warehouse.getWarehouse_name());
+        }
+        statusMap.put("库存",warehouseNameList);
+        List<String> deptList = new ArrayList<>();
+        SysUser sysUser = sysUserService.getUser();
+        deptList.add(sysUser.getDept_name());
+        statusMap.put("在用",deptList);
+
+        return statusMap;
+    }
+
+
+
+    @Override
+    public ResultInfo toImport(Integer fileId, String is_save){
+        FileManage fileManage = fileManageMapper.selectById(fileId);
+        String path = uploadPath + File.separator + fileManage.getFile_name();
+        File file = new File(path);
+
+        WarehousingEnter warehousingEnter = new WarehousingEnter();
+        warehousingEnter.setEnter_name(DateUtil.formatDate(new Date()) + "-导入");
+        warehousingEnter.setEnter_time(new Date());
+        warehousingEnter.setDate_import(DateUtils.formatDate(new Date(), "yyyy-MM-dd"));
+
+        //类型 保留最后一个值
+        List<AssetsType> assetsTypeList = this.assetsTypeService.selectList(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, G.ISDEL_NO).orderByDesc(AssetsType::getCreate_time));
+        Map<String,Integer> assetsTypeMapId = assetsTypeList.stream().collect(Collectors.toMap(AssetsType::getAssets_type_name, AssetsType::getId, (oldValue, newValue) -> newValue));
+        //仓库 保留最后一个值
+        List<Warehouse> warehouseList = warehouseService.selectList(Wrappers.<Warehouse>lambdaQuery().eq(Warehouse::getIs_del, G.ISDEL_NO).orderByDesc(Warehouse::getCreate_time));
+        Map<String, Integer> warehouseMap = warehouseList.stream().collect(Collectors.toMap(Warehouse::getWarehouse_name, Warehouse::getId, (oldValue, newValue) -> newValue));
+        //部门 保留最后一个值
+        List<SysDepartment> departmentList = sysDepartmentService.selectList(Wrappers.<SysDepartment>lambdaQuery().eq(SysDepartment::getIs_del, G.ISDEL_NO).orderByDesc(SysDepartment::getCreate_time));
+        Map<String, Integer> deptMap = departmentList.stream().collect(Collectors.toMap(SysDepartment::getDept_name, SysDepartment::getId, (oldValue, newValue) -> newValue));
+
+
+        try {
+            ExcelReader reader = ExcelUtil.getReader(file);
+            List<Map<String, Object>> readAll = reader.readAll();
+            if (CollectionUtils.isEmpty(readAll)) {
+                throw new RuntimeException("导入的数据为空");
+            }
+
+            SysUser sysUser = sysUserService.getUser();
+            //入库导入 初始化 清空数据
+            QueryWrapper<WarehousingEnter> enterQueryWrapper = new QueryWrapper<>();
+            enterQueryWrapper.eq("create_user",sysUser.getId());
+//        enterQueryWrapper.eq("date_import",DateUtils.formatDate(new Date(), "yyyy-MM"));
+            enterQueryWrapper.isNotNull("date_import");
+            List<WarehousingEnter> warehousingEnterList = this.list(enterQueryWrapper);
+            for (WarehousingEnter enter : warehousingEnterList) {
+                enter.setIs_del(G.ISDEL_YES);
+                enter.updateById();
+                UpdateWrapper<WarehousingEnterDetail> enterDetailUpdateWrapper = new UpdateWrapper<>();
+                enterDetailUpdateWrapper.eq("enter_id",sysUser.getId());
+                enterDetailUpdateWrapper.set("is_del",G.ISDEL_YES);
+                WarehousingEnterDetail enterDetail = new WarehousingEnterDetail();
+                enterDetail.update(enterDetailUpdateWrapper);
+            }
+
+
+            //入库导入 初始化 清空数据
+            UpdateWrapper<WarehousingStockDetail> stockDetailUpdateWrapper = new UpdateWrapper<>();
+            stockDetailUpdateWrapper.eq("create_user",sysUser.getId());
+//        stockDetailUpdateWrapper.eq("date_import",DateUtils.formatDate(new Date(), "yyyy-MM"));
+            stockDetailUpdateWrapper.isNotNull("date_import");
+            stockDetailUpdateWrapper.set("is_del",G.ISDEL_YES);
+            warehouseStockDetailServiceImpl.update(stockDetailUpdateWrapper);
+
+            List<WarehousingEnterDetail> list = new ArrayList<>();
+            // 设置errorList，加入校验失败的行号和原因
+            List<Map<String, Object>> errorList = new ArrayList<>();
+            for (Map<String, Object> map : readAll) {
+                // map的所有value 去除前后空格
+                map.forEach((k, v) -> map.put(k, null == v ? "" :v.toString().trim()));
+                // 行号
+                map.put("rowNum", readAll.indexOf(map) + 2);
+                // 错误集合
+                List<String> errList = new ArrayList<>();
+
+                //装备类型	装备名称	型号	数量	保值期限（月）	出厂日期	状态	归属对象
+                WarehousingEnterDetail warehousingEnterDetail  = new WarehousingEnterDetail();
+                String type = null == map.get("装备类型") ? "" : map.get("装备类型").toString();
+                if (StringUtils.isBlank(type)) {
+                    errList.add("装备类型不能为空 ");
+                    map.put("装备类型tip", "装备类型不能为空 ");
+                } else {
+                    if(null == assetsTypeMapId.get(type)){
+                        errList.add("装备类型不存在");
+                        map.put("装备类型tip", "装备类型不存在 ");
+                    }else {
+                        warehousingEnterDetail.setEquip_type(assetsTypeMapId.get(type));
+                    }
+                }
+
+                String name = null == map.get("装备名称") ? "" : map.get("装备名称").toString();
+                if (StringUtils.isBlank(name)) {
+                    errList.add("类型名称不能为空 ");
+                    map.put("类型名称tip", "类型名称不能为空 ");
+                } else {
+                    if(null == assetsTypeMapId.get(name)){
+                        errList.add("类型名称不存在 ");
+                        map.put("类型名称tip", "类型名称不存在 ");
+                    }else {
+                        warehousingEnterDetail.setEquip_name(assetsTypeMapId.get(name));
+                    }
+                }
+
+//                String equip_model = null == map.get("型号") ? "" : map.get("型号").toString();
+//                if (StringUtils.isBlank(equip_model)) {
+//                    errList.add("型号不能为空 ");
+//                    map.put("型号tip", "型号不能为空 ");
+//                } else {
+//                    warehousingEnterDetail.setEquip_model(equip_model);
+//                }
+                String equip_model = null == map.get("型号") ? "" : map.get("型号").toString();
+                if (StringUtils.isBlank(equip_model)) {
+                    warehousingEnterDetail.setEquip_model("");
+                } else {
+                    warehousingEnterDetail.setEquip_model(equip_model);
+                }
+
+
+                String equip_num = null == map.get("数量") ? "" : map.get("数量").toString();
+                if (StringUtils.isBlank(equip_num)) {
+                    errList.add("数量不能为空 ");
+                    map.put("数量tip", "数量不能为空 ");
+                } else {
+                    if(!StringUtils.isNumeric(equip_num)){
+                        errList.add("数量的数据格式不正确 ");
+                        map.put("数量tip", "数量的数据格式不正确 ");
+                    }else{
+                        warehousingEnterDetail.setEquip_num(Integer.valueOf(equip_num));
+                    }
+                }
+                String unit_price = null == map.get("价格") ? "" : map.get("价格").toString();
+                if(StringUtils.isBlank(unit_price) && !StringUtils.isNumeric(unit_price)){
+                    errList.add("价格的数据格式不正确 ");
+                    map.put("价格tip", "价格的数据格式不正确 ");
+                }else{
+                    warehousingEnterDetail.setUnit_price(new BigDecimal(unit_price));
+                }
+
+                String use_year = null == map.get("保值期限（月）") ? "" : map.get("保值期限（月）").toString();
+                if (StringUtils.isBlank(use_year)) {
+                    errList.add("保值期限（月）不能为空 ");
+                    map.put("保值期限（月）tip", "保值期限（月）不能为空 ");
+                } else {
+                    if(!StringUtils.isNumeric(use_year)){
+                        errList.add("保值期限（月）的数据格式不正确 ");
+                        map.put("保值期限（月）tip", "保值期限（月）的数据格式不正确 ");
+                    }else{
+                        if(Integer.parseInt(use_year) > 999){
+                            errList.add("保值期限（月）的数据格式不正确 ");
+                            map.put("保值期限（月）tip", "保值期限（月）的数据格式不正确 ");
+                        }
+                        warehousingEnterDetail.setUse_year(Integer.valueOf(use_year));
+                    }
+                }
+//                warehousingEnterDetail.setUse_year(Integer.valueOf(24));
+
+                String produce_date = null == map.get("出厂日期（如：20250101）") ? "" : map.get("出厂日期（如：20250101）").toString();
+                if (StringUtils.isBlank(produce_date)) {
+                    errList.add("出场日期不能为空 ");
+                    map.put("出场日期tip", "出场日期不能为空 ");
+                } else {
+                    if(isValidDate(produce_date)){
+                        warehousingEnterDetail.setProduce_date(DateUtil.parse(produce_date));
+                    }else {
+                        errList.add("出场日期的数据格式不正确 ");
+                        map.put("出场日期tip", "出场日期的数据格式不正确 ");
+                    }
+                }
+
+                String status = null == map.get("状态") ? "" : map.get("状态").toString();
+                if (StringUtils.isBlank(status)) {
+                    errList.add("状态不能为空 ");
+                    map.put("状态tip", "状态不能为空 ");
+                } else {
+                    if("库存".equals(status)){
+                        warehousingEnterDetail.setEquip_status(0);
+                    }else if("在用".equals(status)){
+                        warehousingEnterDetail.setEquip_status(1);
+                    }
+                }
+
+                String homeObject = null == map.get("归属对象") ? "" : map.get("归属对象").toString();
+                if(StringUtils.isBlank(homeObject)){
+                    errList.add("归属对象不能为空 ");
+                    map.put("归属对象tip", "归属对象不能为空 ");
+                }else{
+                    if(StringUtils.isNotEmpty(status) && "库存".equals(status)){
+                        if(null == warehouseMap.get(homeObject)){
+                            errList.add("归属对象，库存不存在 ");
+                            map.put("状态tip", "归属对象，库存不存在 ");
+                        }{
+                            warehousingEnterDetail.setWarehouse_id(warehouseMap.get(homeObject));
+                        }
+                    }else if(StringUtils.isNotEmpty(status) && "在用".equals(status)){
+                        if(null == deptMap.get(homeObject)){
+                            errList.add("归属对象，在用不存在 ");
+                            map.put("状态tip", "归属对象，在用不存在 ");
+                        }else {
+                            warehousingEnterDetail.setUse_dept(deptMap.get(homeObject));
+                        }
+                    }
+                }
+
+
+                if (CollectionUtils.isEmpty(errList))  {
+                    list.add(warehousingEnterDetail);
+                }else{
+                    map.put("error", errList);
+                    errorList.add(map);
+                }
+            }
+            if ((StringUtils.isNotEmpty(is_save) && ("1").equals(is_save))) {
+                warehousingEnter.setEnterDetails(list);
+                add(warehousingEnter, "export");
+            } else {
+                if (!CollectionUtils.isEmpty(errorList)) {
+                    return ResultInfo.builder().code(0).msg("导入失败").data(errorList).build();
+                }
+                warehousingEnter.setEnterDetails(list);
+                add(warehousingEnter, "export");
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultInfo.error("导入失败: " + e.getMessage());
+        }
+        return ResultInfo.success();
+    }
+
+    @Override
+    public void edit(WarehousingEnterDetail warehousingEnterDetail) {
+        warehousingEnterDetail.updateById();
+
+        //修改入库数据
+
+        WarehousingStockDetail detail = new WarehousingStockDetail().selectOne(
+                Wrappers.<WarehousingStockDetail>lambdaQuery().eq(WarehousingStockDetail::getEnter_detail_id,warehousingEnterDetail.getId())
+        );
+
+        //过期时间
+        detail.setExpired_date(DateUtil.offset(warehousingEnterDetail.getProduce_date(), DateField.MONTH, detail.getUse_year()));
+        //临期
+        detail.setCritical_date(DateUtil.offset(detail.getExpired_date(), DateField.MONTH, -6));
+        detail.updateById();
+    }
+
+    public boolean isValidDate(String datetime) {
+//        String regex = "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) "
+//                + "(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$";
+        String regex = "^\\d{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$";
+        return datetime != null && datetime.matches(regex);
+    }
+
+}

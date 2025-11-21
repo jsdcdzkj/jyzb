@@ -1,0 +1,288 @@
+<template>
+  <div class="app-container">
+    <div class="filter_container">
+      <moduleTitle title="条件筛选"></moduleTitle>
+      <div class="filter_box">
+        <el-form :inline="true" class="demo-form-inline topsearch" @submit.native.prevent>
+          <el-form-item>
+            <el-date-picker v-model="listQuery.staticsTime" type="date" placeholder="统计时间"
+              value-format="yyyy-MM-dd"></el-date-picker>
+          </el-form-item>
+          <el-form-item>
+            <el-select v-model="listQuery.equip_status" clearable placeholder="装备状态" @change="changeStatus">
+              <el-option label="库存" :value="0"></el-option>
+              <el-option label="在用" :value="1"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="listQuery.equip_status === 0" key="warehouse">
+            <el-select size="mini" v-model="listQuery.warehouse_id" clearable placeholder="选择仓库">
+              <el-option v-for="el, index in warehouseList" :key="index" :label="el.warehouse_name"
+                :value="el.id"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="listQuery.equip_status === 1" key="dept">
+            <el-cascader v-model="listQuery.use_dept" :options="deptList" :show-all-levels="false"
+              :props="{ checkStrictly: true, value: 'id', label: 'title', emitPath: false }" clearable
+              placeholder="选择机构"></el-cascader>
+          </el-form-item>
+          <el-form-item>
+            <el-select size="mini" v-model="listQuery.equip_type" clearable placeholder="装备类型" @change="changeType">
+              <el-option v-for="el, index in assetsType" :key="index" :label="el.assets_type_name" :value="el.id"
+                :disabled="el.is_disable == '1'"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="listQuery.equip_type">
+            <el-select size="mini" v-model="listQuery.equip_name" clearable placeholder="装备名称" @change="changeName">
+              <el-option v-for="el, index in nameList" :key="index" :label="el.assets_type_name"
+                :value="el.id"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="listQuery.equip_name">
+            <el-select size="mini" v-model="listQuery.equip_model" clearable placeholder="装备型号">
+              <el-option v-for="el, index in modelList" :key="index" :label="el" :value="el"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="价值区间">
+            <el-input v-model="listQuery.priceStart" clearable placeholder="最小值" style="width: 100px;"
+              @keyup.enter.native="search"></el-input>
+            <span> - </span>
+            <el-input v-model="listQuery.priceEnd" clearable placeholder="最大值" style="width: 100px;"
+              @keyup.enter.native="search"></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="primary" icon="el-icon-search" @click="search">查询</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="default" icon="el-icon-refresh" @click="refresh">重置</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="warning" icon="el-icon-download" @click="exportData">导出</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+    <div class="content-box">
+      <moduleTitle title="装备列表"></moduleTitle>
+      <div class="el-table-box">
+        <el-table v-loading="listLoading" :data="list" element-loading-text="Loading" stripe border fit height="100%"
+          highlight-current-row>
+          <el-table-column label="序号" width="60" type="index" align="center">
+            <template slot-scope="scope">
+              {{ (listQuery.page - 1) * listQuery.limit + scope.$index + 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="装备类型" prop="equip_type_name" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column label="装备名称" prop="equip_name_desc" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column label="装备编码" prop="assets_type_code" align="center"></el-table-column>
+          <el-table-column label="总数" width="150" prop="equip_num" align="center"></el-table-column>
+          <el-table-column label="库存数量" prop="equip_stock_num" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column label="在用数量" prop="equip_use_num" align="center"></el-table-column>
+          <el-table-column label="总价值（元）" width="150" prop="totalPrice" align="center"></el-table-column>
+          <el-table-column label="操作" width="150" align="center">
+            <template #default="{ row }">
+              <el-button type="primary" size="mini" @click="handleView(row)">
+                明细详情
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <pagination v-show="total > 0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit"
+      @pagination="setQuery" />
+    <el-dialog title="库存详情" :visible.sync="showDialog" width="1200px">
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="统计时间">{{ detailInfo.staticsTime }}</el-descriptions-item>
+        <el-descriptions-item label="总数量">{{ detailInfo.equipNum }}</el-descriptions-item>
+        <el-descriptions-item :label="sourceStr">
+          <span v-if="listQuery.equip_status === ''">{{ detailInfo.warehouseNum + detailInfo.deptNum }}</span>
+          <span v-if="listQuery.equip_status === 0">{{ detailInfo.warehouseNum }}</span>
+          <span v-if="listQuery.equip_status === 1">{{ detailInfo.deptNum }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="总价值">{{ detailInfo.totalPrice }}</el-descriptions-item>
+      </el-descriptions>
+      <el-table :data="detailInfo.stockDetails" ref="detailTable" stripe border fit height="auto" max-height="60vh"
+        style="margin-top: 20px;">
+        <el-table-column align="center" width="60" type="index" label="序号"></el-table-column>
+        <el-table-column align="center" prop="homeObjectDesc" label="归属对象"></el-table-column>
+        <el-table-column align="center" prop="equip_type_name" label="装备类型"></el-table-column>
+        <el-table-column align="center" prop="equip_name_desc" label="装备名称"></el-table-column>
+        <el-table-column align="center" prop="assets_type_code" label="装备编码"></el-table-column>
+        <el-table-column label="状态" align="center">
+          <template #default="{ row }">
+            {{ row.equip_status === 0 ? '存储' : '在用' }}
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="出入库类型">
+          <template #default="{ row }">
+            <span v-if="row.equip_num > 0">手动入库</span>
+            <span v-else>
+              {{ row.stock_type == 1 ? '调拨' : row.stock_type == 2 ? '领用' : '处置' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" prop="equip_num" label="数量"></el-table-column>
+        <el-table-column align="center" prop="price" label="价值"></el-table-column>
+      </el-table>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import { getEquipmentList, getAllWarehouse, getDeptTree } from '@/api/system'
+import { getEquipmentModel, stockCount, getEquipmentStock, exportStock } from '@/api/inventory'
+export default {
+  data() {
+    return {
+      total: 0,
+      list: [],
+      assetsType: [],
+      warehouseList: [],
+      deptList: [],
+      nameList: [],
+      modelList: [],
+      listLoading: false,
+      showDialog: false,
+      detailInfo: {
+        stockDetails: []
+      },
+      listQuery: {
+        page: 1,
+        limit: 20,
+        equip_status: '',
+        equip_type: '',
+        equip_name: '',
+        equip_model: '',
+        warehouse_id: '',
+        use_dept: '',
+        priceStart: '',
+        priceEnd: '',
+        staticsTime: '',
+        type: ''
+      }
+    }
+  },
+  computed: {
+    sourceStr() {
+      if (this.listQuery.equip_status === 0) {
+        return '来源仓库数';
+      }
+      if (this.listQuery.equip_status === 1) {
+        return '来源机构数';
+      }
+      return '来源仓库/机构数';
+    }
+  },
+  created() {
+    this.listQuery.type = this.$route.path.split('_')[1] || '';
+    this.fetchData();
+    getEquipmentList({ parent_id: this.listQuery.type }).then(res => {
+      this.assetsType = res.data || [];
+    })
+    getAllWarehouse().then(res => {
+      this.warehouseList = res.data || [];
+    })
+    getDeptTree().then(res => {
+      this.deptList = this.handleTreeList(res.data) || [];
+    })
+  },
+  methods: {
+    exportData() {
+      var that = this;
+      exportStock().then(res => {
+        const reader = new FileReader();
+        reader.readAsText(res.data, "utf-8");
+        reader.onload = function () {
+          try {
+            const jsondata = JSON.parse(reader.result);
+            if (jsondata && jsondata.code) {
+              if (jsondata.code == 500) {
+                that.$message.error(jsondata.msg);
+              }
+            } else {
+              // 异常处理
+            }
+          } catch (err) {
+            // 成功
+            const objectUrl = URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement("a");
+            link.download = decodeURI('装备统计.xls');
+            link.href = objectUrl;
+            link.click();
+            that.$message.success("下载成功！");
+          }
+        };
+      })
+    },
+    search() {
+      this.listQuery.page = 1;
+      this.fetchData();
+    },
+    refresh() {
+      this.listQuery = this.$options.data().listQuery;
+      this.listQuery.type = this.$route.path.split('_')[1] || '';
+      this.dateRange = null;
+      this.fetchData();
+    },
+    changeStatus() {
+      this.listQuery.warehouse_id = '';
+      this.listQuery.use_dept = '';
+    },
+    changeType(val) {
+      this.listQuery.equip_name = '';
+      this.listQuery.equip_model = '';
+      getEquipmentList({ parent_id: val }).then(res => {
+        this.nameList = res.data || [];
+      })
+    },
+    changeName(val) {
+      this.listQuery.equip_model = '';
+      getEquipmentModel({ warehouseId: this.listQuery.warehouse_id, use_dept: this.listQuery.use_dept, equip_name: val }).then(res => {
+        this.modelList = res.data || [];
+      })
+    },
+    handleView(row) {
+      let params = {
+        equip_type: row.equip_type,
+        equip_name: row.equip_name,
+        equip_model: this.listQuery.equip_model,
+        warehouse_id: this.listQuery.warehouse_id,
+        use_dept: this.listQuery.use_dept,
+        equip_status: row.equip_status,
+        staticsTime: this.listQuery.staticsTime
+      }
+      getEquipmentStock(params).then(res => {
+        this.detailInfo = res.data;
+        this.showDialog = true;
+      })
+    },
+    setQuery({ page, limit }) {
+      this.listQuery.page = page;
+      this.listQuery.limit = limit;
+      this.fetchData();
+    },
+    fetchData() {
+      if (this.listQuery.priceStart && isNaN(this.listQuery.priceStart)) {
+        this.$message.error('价值最小值请输入数字类型');
+        return
+      }
+      if (this.listQuery.priceEnd && isNaN(this.listQuery.priceEnd)) {
+        this.$message.error('价值最大值请输入数字类型');
+        return
+      }
+      if (this.listQuery.priceStart && this.listQuery.priceEnd && Number(this.listQuery.priceStart) > Number(this.listQuery.priceEnd)) {
+        this.$message.error('价值最大值应大于最小值');
+        return
+      };
+      this.listLoading = true;
+      stockCount(this.listQuery).then((response) => {
+        this.list = response.data;
+        this.total = response.count;
+        this.listLoading = false;
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped></style>

@@ -1,0 +1,297 @@
+<template>
+  <el-drawer :visible.sync="dialogFormVisible" :size="variables.drawWidth" @close="close" :wrapperClosable="false">
+    <span slot="title" class="drawer-title"><b>新增入库单</b></span>
+    <div class="box-card">
+      <moduleTitle title="基础信息"></moduleTitle>
+      <el-form inline ref="baseInfo" :model="formInline" :rules="rules" style="padding: 10px 20px;">
+        <!--        <el-form-item prop="enter_name">-->
+        <!--          <el-input v-model="formInline.enter_name" size="small" placeholder="入库单名称" :maxlength="50" clearable />-->
+        <!--        </el-form-item>-->
+        <el-form-item prop="enter_time">
+          <el-date-picker placeholder="请选择入库时间" v-model="formInline.enter_time" type="date"
+            value-format="yyyy-MM-dd"></el-date-picker>
+        </el-form-item>
+        <el-form-item prop="supplier_id">
+          <el-select v-model="formInline.supplier_id" placeholder="请选择供应商">
+            <el-option v-for="el, index in supplierList" :key="index" :label="el.supplier_name"
+              :value="el.id"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+    </div>
+    <div class="box-card">
+      <moduleTitle title="入库明细"></moduleTitle>
+      <div style="padding: 16px;">
+        <el-table :data="formInline.enterDetails" ref="tableBox" stripe border fit height="calc(100vh - 336px)">
+          <el-table-column label="序号" type="index" width="60" align="center"></el-table-column>
+          <el-table-column label="装备类型" align="center">
+            <template #default="{ row, $index }">
+              <el-select size="mini" v-model="row.equip_type" placeholder="装备类型" @change="changeType($event, $index)">
+                <el-option v-for="el, index in assetsType" :key="index" :label="el.assets_type_name" :value="el.id"
+                  :disabled="el.is_disable == '1'"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="装备名称" align="center">
+            <template #default="{ row, $index }">
+              <el-select size="mini" v-model="row.equip_name" placeholder="装备名称"
+                @change="changeUnit($event, row, $index)">
+                <el-option v-for="el, index in row.nameList" :key="index" :label="el.assets_type_name"
+                  :measurement_unit="el.measurement_unit" :value="el.id" :disabled="el.is_disable == '1'"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="计量单位" align="center">
+            <template #default="{ row }">
+              <el-input size="mini" placeholder="" v-model.trim="row.measurement_unit" :maxlength="50"
+                disabled></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column label="保质期限(月)" width="160" align="center">
+            <template #default="{ row }">
+              <el-input v-model="row.use_year" :min="1" label="保质日期" size="mini"></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column label="型号" align="center">
+            <template #default="{ row }">
+              <el-input size="mini" placeholder="装备型号" v-model.trim="row.equip_model" :maxlength="50"></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column label="数量" align="center" width="100">
+            <template #default="{ row }">
+              <el-input size="mini" placeholder="装备数量" v-model.trim="row.equip_num" :maxlength="50"></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column label="单价" align="center" width="100">
+            <template #default="{ row }">
+              <el-input size="mini" placeholder="装备单价" v-model.trim="row.unit_price" :maxlength="50"></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column label="总价" align="center">
+            <template #default="{ row }">
+              {{ row.equip_num * row.unit_price }}
+            </template>
+          </el-table-column>
+          <el-table-column label="出厂日期" width="155" align="center">
+            <template #default="{ row }">
+              <el-date-picker size="mini" style="width: 100%;" placeholder="请选择日期" v-model="row.produce_date"
+                type="date" value-format="yyyy-MM-dd"></el-date-picker>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" align="center" width="100">
+            <template #default="{ row, $index }">
+              <el-select size="mini" v-model="row.equip_status" placeholder="状态" @change="changeStatus($event, $index)">
+                <el-option label="库存" :value="0"></el-option>
+                <el-option label="在用" :value="1"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="归属对象" align="center">
+            <template #default="{ row }">
+              <el-select size="mini" v-model="row.warehouse_id" placeholder="所属仓库" v-if="row.equip_status === 0">
+                <el-option v-for="el, index in warehouseList" :key="index" :label="el.warehouse_name"
+                  :value="el.id"></el-option>
+              </el-select>
+              <el-cascader v-model="row.use_dept" v-if="row.equip_status === 1" disabled :options="deptList"
+                :show-all-levels="false" :props="{ checkStrictly: true, value: 'id', label: 'title', emitPath: false }"
+                clearable placeholder="所属机构"></el-cascader>
+              <!-- <el-select size="mini" v-model="row.use_dept" placeholder="所属机构" >
+                <el-option v-for="el, index in deptList" :key="index" :label="el.dept_name" :value="el.id"></el-option>
+              </el-select> -->
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="80" align="center">
+            <template #default="{ $index }">
+              <el-button type="danger" size="mini" @click="delItem($index)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div class="add_box" @click="addItem">+新增</div>
+    </div>
+    <div class="footer-btn">
+      <el-button @click="close" size="small">取消</el-button>
+      <el-button type="primary" size="small" :loading="loading" @click="save()">保存
+      </el-button>
+    </div>
+  </el-drawer>
+</template>
+
+<script>
+import variables from '@/styles/variables.scss';
+import { getAllSupplier, getEquipmentList, getAllWarehouse, getDeptTree } from '@/api/system'
+import { addInOrder } from '@/api/inventory'
+const listItem = {
+  equip_type: '',
+  nameList: [],
+  equip_name: '',
+  equip_model: '',
+  measurement_unit: '',
+  equip_num: '',
+  unit_price: '',
+  use_year: 24,
+  produce_date: '',
+  equip_status: '',
+  warehouse_id: '',
+  use_dept: '',
+}
+export default {
+  name: 'add',
+  data() {
+    return {
+      loading: false,
+      dialogFormVisible: false,
+      supplierList: [],
+      assetsType: [],
+      warehouseList: [],
+      deptList: [],
+      formInline: {
+        enter_name: '',
+        supplier_id: '',
+        enter_time: '',
+        enterDetails: [Object.assign({}, listItem)]
+      },
+      rules: {
+        // enter_name: [
+        //   { required: true, message: '请输入入库单名称', trigger: 'blur' },
+        // ],
+        // supplier_id: [
+        //   { required: true, message: '请选择供应商', trigger: 'change' },
+        // ],
+        enter_time: [
+          { required: true, message: '请选择入库时间', trigger: 'change' },
+        ],
+      }
+    }
+  },
+  computed: {
+    variables() {
+      return variables
+    },
+    department() {
+      return this.$store.state.user.department
+    }
+  },
+  created() {
+    getAllSupplier().then(res => {
+      this.supplierList = res.data || [];
+    })
+    getEquipmentList().then(res => {
+      this.assetsType = res.data || [];
+    })
+    getAllWarehouse().then(res => {
+      this.warehouseList = res.data || [];
+    })
+    getDeptTree().then(res => {
+      this.deptList = this.handleTreeList(res.data) || [];
+    })
+  },
+  methods: {
+    showEdit() {
+      this.loading = false;
+      this.formInline = this.$options.data().formInline;
+      this.dialogFormVisible = true;
+      this.$nextTick(() => {
+        this.$refs.baseInfo.clearValidate();
+      })
+    },
+    addItem() {
+      this.formInline.enterDetails.push(Object.assign({}, listItem));
+      this.$nextTick(() => {
+        this.$refs.tableBox.bodyWrapper.scrollTop = 9999;
+      })
+    },
+    delItem(index) {
+      this.formInline.enterDetails.splice(index, 1);
+    },
+    changeType(val, index) {
+      this.formInline.enterDetails[index].equip_name = '';
+
+      getEquipmentList({ parent_id: val }).then(res => {
+        this.formInline.enterDetails[index].nameList = res.data || [];
+      })
+    },
+    changeUnit(val, row, index) {
+      const data = row.nameList.find((el) => el.id == val);
+      this.formInline.enterDetails[index].measurement_unit = data.measurement_unit;
+      this.formInline.enterDetails[index].use_year = 24;
+    },
+    changeStatus(val, index) {
+      if (val == 0) {
+        this.formInline.enterDetails[index].use_dept = '';
+      } else {
+        this.formInline.enterDetails[index].warehouse_id = '';
+        this.formInline.enterDetails[index].use_dept = this.department;
+      }
+    },
+    close() {
+      this.dialogFormVisible = false;
+    },
+    save() {
+      this.$refs.baseInfo.validate((valid) => {
+        if (valid) {
+          const list = this.formInline.enterDetails;
+          if (list.length == 0) {
+            this.$message.error('请添加入库明细');
+            return
+          }
+          const isVerify = list.every(el => {
+            if (!el.equip_type || !el.equip_name || !el.use_year || !el.produce_date || el.equip_status === '' || !el.equip_num || !el.unit_price) {
+              this.$message.error('入库明细信息不完整');
+              return false;
+            } else if (isNaN(el.equip_num)) {
+              this.$message.error('入库数量请输入数字类型');
+              return false;
+            } else if (isNaN(el.unit_price)) {
+              this.$message.error('入库单价请输入数字类型');
+              return false;
+            } else if (!el.warehouse_id && !el.use_dept) {
+              this.$message.error('入库明细信息不完整');
+              return false;
+            } else {
+              return true;
+            }
+          })
+          if (isVerify) {
+            this.loading = true;
+            addInOrder(this.formInline).then(() => {
+              this.$message.success('入库成功');
+              this.$emit('fetch-data');
+              this.close();
+            }).catch(() => {
+              this.loading = false;
+            });
+          }
+        }
+      })
+    }
+  }
+}
+</script>
+<style scoped lang="scss">
+.add_box {
+  height: 32px;
+  line-height: 30px;
+  border-radius: 4px;
+  border: 1px dashed rgba(145, 163, 202, 1);
+  text-align: center;
+  color: rgba(145, 163, 202, 1);
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 0 16px;
+  user-select: none;
+}
+
+::v-deep {
+  .el-drawer__header {
+    padding: 10px !important;
+    margin-bottom: 0;
+    border-bottom: 1px solid #d1d9e1;
+  }
+
+  .el-drawer__body {
+    padding-bottom: 60px;
+  }
+}
+</style>

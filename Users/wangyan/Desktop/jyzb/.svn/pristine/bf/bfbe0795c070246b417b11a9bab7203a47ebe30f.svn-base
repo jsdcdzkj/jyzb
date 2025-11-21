@@ -1,0 +1,122 @@
+package com.jsdc.rfid.model;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.activerecord.Model;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.*;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * 资产品类表
+ */
+@TableName("assets_type")
+@Entity
+@Table(name = "assets_type")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AssetsType extends Model<AssetsType> implements Serializable {
+    /**
+     * 自增id
+     */
+    @Id
+    @TableId(value = "id", type = IdType.AUTO)
+    private Integer id;
+
+    //父级ID 0 1 2
+    private Integer parent_id;
+
+    //是否禁 0 否 1 是 （默认0）
+    @Column(name = "is_disable", columnDefinition = "varchar(255) DEFAULT '0' COMMENT '是否禁 0 否 1 是 （默认0）'")
+    private String is_disable;
+
+    /**
+     * 层级
+     */
+    private Integer level;
+
+    @Transient
+    @TableField(exist = false)
+    private String  parent_name ;
+
+    /**
+     * 资产类型名称
+     */
+    private String assets_type_name;
+    /**
+     * 资产类型编码
+     */
+    private String assets_type_code;
+    /**
+     * 计量单位
+     */
+    private String measurement_unit;
+    /**
+     * 保质日期
+     */
+    private String shelf_life;
+    /**
+     * 是否启用
+     */
+    private Integer is_enable;
+    /**
+     * 是否应急统计
+     */
+    private Integer is_statistics;
+
+    /**
+     * tree 结构
+     */
+    @Transient
+    @TableField(exist = false)
+    private String title;
+
+    /**
+     * 创建时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date create_time;
+
+    /**
+     * 更新时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date update_time;
+
+    /**
+     * 创建人
+     */
+    private Integer create_user;
+
+    /**
+     * 更新人
+     */
+    private Integer update_user;
+
+    /**
+     * 简介
+     */
+    private String remarks;
+
+    /**
+     * 是否删除 0:否 1:是
+     */
+    private String is_del;
+
+    @Transient
+    @TableField(exist = false)
+    private String value;
+
+    @Transient
+    @TableField(exist = false)
+    private List<AssetsType> children = new ArrayList<>();
+}

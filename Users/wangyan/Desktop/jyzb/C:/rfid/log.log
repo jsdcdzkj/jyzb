@@ -1,0 +1,2 @@
+2025-11-05 08:14:57.660  WARN 5185 --- [http-nio-7076-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.http.converter.HttpMessageNotReadableException: JSON parse error: Cannot deserialize instance of `java.util.ArrayList` out of VALUE_STRING token; nested exception is com.fasterxml.jackson.databind.exc.MismatchedInputException: Cannot deserialize instance of `java.util.ArrayList` out of VALUE_STRING token
+ at [Source: (PushbackInputStream); line: 1, column: 89] (through reference chain: com.jsdc.rfid.dto.WarehousingStockDto["warehouseIds"])]

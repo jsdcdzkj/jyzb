@@ -1,0 +1,467 @@
+package com.jsdc.rfid.controller.warehouse;
+
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.poi.excel.BigExcelWriter;
+import cn.hutool.poi.excel.ExcelUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.github.pagehelper.PageInfo;
+import com.jsdc.rfid.common.G;
+import com.jsdc.rfid.dao.warehouse.WarehousingEnterDao;
+import com.jsdc.rfid.dto.WarehousingStockDto;
+import com.jsdc.rfid.enums.DataType;
+import com.jsdc.rfid.mapper.warehouse.WarehouseStockDetailMapper;
+import com.jsdc.rfid.model.SysPostPermission;
+import com.jsdc.rfid.model.SysUser;
+import com.jsdc.rfid.model.warehouse.*;
+import com.jsdc.rfid.service.SysDepartmentService;
+import com.jsdc.rfid.service.SysUserService;
+import com.jsdc.rfid.service.warehouse.BorrowDetailWarehousingService;
+import com.jsdc.rfid.service.warehouse.DeliveryWarehouseService;
+import com.jsdc.rfid.service.warehouse.EnterWarehouseService;
+import com.jsdc.rfid.service.warehouse.WarehouseStockService;
+import com.jsdc.rfid.service.warehouse.impl.*;
+import com.jsdc.rfid.utils.CommonDataTools;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.*;
+import vo.ResultInfo;
+
+import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.Wrapper;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * 库存管理
+ */
+@Controller
+@RequestMapping("/stock")
+public class WarehouseStockController {
+
+
+    @Resource
+    private WarehouseStockServiceImpl warehouseStockService;
+    @Resource
+    private BorrowWarehousingServiceImpl borrowWarehousingService;
+    private BorrowDetailWarehousingServiceImpl borrowDetailWarehousingService;
+    @Autowired
+    private SysUserService sysUserService;
+    @Autowired
+    private SysDepartmentService sysDepartmentService;
+    @Autowired
+    private BorrowWarehousingServiceImpl borrowWarehousingServiceImpl;
+    @Autowired
+    private CommonDataTools commonDataTools;
+    @Autowired
+    private DeliveryWarehouseService deliveryWarehouseService;
+    @Autowired
+    private EnterWarehouseService enterWarehouseService;
+    @Autowired
+    private EnterWarehouseServiceImpl enterWarehouseServiceImpl;
+    @Autowired
+    private WarehouseStockDetailMapper warehouseStockDetailMapper;
+    @Autowired
+    private WarehousingEnterDao warehousingEnterDao;
+    @Autowired
+    private BorrowDetailWarehousingServiceImpl borrowDetailWarehousingServiceImpl;
+    @Autowired
+    private EnterWarehouseDetailServiceImpl enterWarehouseDetailServiceImpl;
+
+    /**
+     * 库存列表
+     */
+    @RequestMapping(value = "toList.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo toList(@RequestParam(defaultValue = "1", value = "page") Integer pageIndex,
+                             @RequestParam(defaultValue = "10", value = "limit") Integer pageSize,
+                             WarehousingStockDto warehousingStockDto) {
+        PageInfo<WarehousingStock> page = warehouseStockService.pageQuery(pageIndex, pageSize, warehousingStockDto);
+        return ResultInfo.success(page);
+    }
+
+    /**
+     * 库存列表 共享
+     */
+    @RequestMapping(value = "toListAll.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo toListAll(@RequestParam(defaultValue = "1", value = "page") Integer pageIndex,
+                                @RequestParam(defaultValue = "10", value = "limit") Integer pageSize,
+                                WarehousingStockDto warehousingStockDto) {
+        PageInfo<WarehousingStock> page = warehouseStockService.pageQueryAll(pageIndex, pageSize, warehousingStockDto);
+        return ResultInfo.success(page);
+    }
+
+    /**
+     * 库存明细
+     */
+    @RequestMapping(value = "equipStockWarehouse.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo equipStockWarehouse(@RequestParam(defaultValue = "-1", value = "id") Integer id, Integer warehouse_id) {
+        return ResultInfo.success(warehouseStockService.equipStockWarehouse(id, warehouse_id));
+    }
+
+    /**
+     * 提交申请
+     */
+    @RequestMapping(value = "apply.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo apply(@RequestBody WarehousingBorrow bean) {
+        bean.setDelivery_no(commonDataTools.getNo(DataType.DELIVER_NUMBER.getType(), null));
+        bean.setIs_del(G.ISDEL_NO);
+        bean.setCreate_time(new Date());
+        bean.setCreate_user(sysUserService.getUser().getId());
+        bean.setDept_id(sysUserService.getUser().getDepartment());
+        return ResultInfo.success(borrowWarehousingServiceImpl.save(bean));
+    }
+
+    /**
+     * 提交同意申请
+     */
+    @RequestMapping(value = "applyAgree.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyAgree(@RequestBody WarehousingBorrow bean) {
+        WarehousingBorrow warehousingBorrow = borrowWarehousingService.getById(bean.getId());
+        warehousingBorrow.setStatus(2);
+        warehousingBorrow.setApplyTime(new Date());
+
+        outInWarehousing(warehousingBorrow, bean, warehousingBorrow.getUse_dept(), 0);
+
+        return ResultInfo.success(warehousingBorrow.updateById());
+    }
+
+    /**
+     * 提交归还申请
+     */
+    @RequestMapping(value = "applyReturn.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyReturn(Integer id) {
+        WarehousingBorrow warehousingBorrow = borrowWarehousingService.getById(id);
+        warehousingBorrow.setId(id);
+        warehousingBorrow.setStatus(3);
+        return ResultInfo.success(warehousingBorrow.updateById());
+    }
+
+
+    /**
+     * 提交确认归还申请
+     */
+    @RequestMapping(value = "applyConfirmReturn.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyConfirmReturn(Integer id) {
+        WarehousingBorrow bean = borrowWarehousingService.getById(id);
+        QueryWrapper<WarehousingBorrowDetail> borrowDetailQueryWrapper = new QueryWrapper<>();
+        borrowDetailQueryWrapper.eq("warehousing_borrow_id", id);
+        List<WarehousingBorrowDetail> borrowDetailList = borrowDetailWarehousingServiceImpl.list(borrowDetailQueryWrapper);
+        bean.setBorrowDetails(borrowDetailList);
+
+        WarehousingBorrow warehousingBorrow = borrowWarehousingService.getById(id);
+        warehousingBorrow.setId(id);
+        warehousingBorrow.setStatus(4);
+        warehousingBorrow.setReturnTime(new Date());
+
+
+        outInWarehousing(warehousingBorrow, bean, warehousingBorrow.getDept_id(), 1);
+
+
+        return ResultInfo.success(warehousingBorrow.updateById());
+    }
+
+    /**
+     * 提交驳回申请
+     */
+    @RequestMapping(value = "applyReject.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyReject(Integer id) {
+        WarehousingBorrow warehousingBorrow = borrowWarehousingService.getById(id);
+        warehousingBorrow.setId(id);
+        warehousingBorrow.setStatus(5);
+        warehousingBorrow.setApplyTime(new Date());
+        return ResultInfo.success(warehousingBorrow.updateById());
+    }
+
+    /**
+     * 借用装备管理 列表
+     */
+    @RequestMapping(value = "applyPageQuery.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyPageQuery(@RequestParam(defaultValue = "1", value = "page") Integer pageIndex,
+                                     @RequestParam(defaultValue = "10", value = "limit") Integer pageSize,
+                                     WarehousingBorrow warehousingBorrow) {
+        warehousingBorrow.setDept_id(sysUserService.getUser().getDepartment());
+        return ResultInfo.success(warehouseStockService.applyPageQuery(pageIndex, pageSize, warehousingBorrow));
+    }
+
+    /**
+     * 借用装备管理 申请人
+     */
+    @RequestMapping(value = "applyPerson.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyPerson() {
+        QueryWrapper<WarehousingBorrow> warehousingBorrowQueryWrapper = new QueryWrapper<>();
+        warehousingBorrowQueryWrapper.select("DISTINCT(create_user)");
+        warehousingBorrowQueryWrapper.eq("dept_id", sysUserService.getUser().getDepartment());
+
+        List<WarehousingBorrow> list = borrowWarehousingService.list(warehousingBorrowQueryWrapper);
+        List<Integer> ids = list.stream().map(WarehousingBorrow::getCreate_user).collect(Collectors.toList());
+
+        List<SysUser> sysUserList = new ArrayList<>();
+        if (!ids.isEmpty()) {
+            QueryWrapper<SysUser> sysUserQueryWrapper = new QueryWrapper<>();
+            sysUserQueryWrapper.in("id", ids);
+            sysUserList = sysUserService.selectList(sysUserQueryWrapper);
+        }
+        return ResultInfo.success(sysUserList);
+    }
+
+    /**
+     * 借出装备管理 列表
+     */
+    @RequestMapping(value = "applyLendPageQuery.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyLendPageQuery(@RequestParam(defaultValue = "1", value = "page") Integer pageIndex,
+                                         @RequestParam(defaultValue = "10", value = "limit") Integer pageSize,
+                                         WarehousingBorrow warehousingBorrow) {
+        warehousingBorrow.setUse_dept(sysUserService.getUser().getDepartment());
+        return ResultInfo.success(warehouseStockService.applyPageQuery(pageIndex, pageSize, warehousingBorrow));
+    }
+
+    /**
+     * 借出装备管理 申请人
+     */
+    @RequestMapping(value = "applyLendPerson.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applicantList() {
+        QueryWrapper<WarehousingBorrow> warehousingBorrowQueryWrapper = new QueryWrapper<>();
+        warehousingBorrowQueryWrapper.select("DISTINCT(create_user)");
+        warehousingBorrowQueryWrapper.eq("use_dept", sysUserService.getUser().getDepartment());
+
+        List<WarehousingBorrow> list = borrowWarehousingService.list(warehousingBorrowQueryWrapper);
+        List<Integer> ids = list.stream().map(WarehousingBorrow::getCreate_user).collect(Collectors.toList());
+
+        List<SysUser> sysUserList = new ArrayList<>();
+        if (!ids.isEmpty()) {
+            QueryWrapper<SysUser> sysUserQueryWrapper = new QueryWrapper<>();
+            sysUserQueryWrapper.in("id", ids);
+            sysUserList = sysUserService.selectList(sysUserQueryWrapper);
+        }
+        return ResultInfo.success(sysUserList);
+    }
+
+
+    /**
+     * 借出装备管理 详情
+     */
+    @RequestMapping(value = "applyLendDetail.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyDetail(Integer id) {
+        return ResultInfo.success(warehouseStockService.applyLendDetail(id));
+    }
+
+    /**
+     * 借用装备管理 取消删除
+     */
+    @RequestMapping(value = "applyDel.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo applyDel(Integer id) {
+        return ResultInfo.success(warehouseStockService.applyDel(id));
+    }
+
+
+    /**
+     * 装备库存查询
+     */
+    @RequestMapping(value = "equipList.do", method = RequestMethod.GET)
+    @ResponseBody
+    public ResultInfo equipList(WarehousingStockDto warehousingStockDto) {
+        return ResultInfo.success(warehouseStockService.equipList(warehousingStockDto));
+    }
+
+    /**
+     * 库存管理-装备明细
+     */
+    @RequestMapping(value = "detail.do", method = RequestMethod.GET)
+    @ResponseBody
+    public ResultInfo detail(WarehousingStockDto warehousingStockDto) {
+        return ResultInfo.success(warehouseStockService.detail(warehousingStockDto));
+    }
+
+    /**
+     * 库存管理统计
+     */
+    @RequestMapping(value = "stockCount.do", method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo stockCount(@RequestParam(defaultValue = "1", value = "page") Integer pageIndex,
+                                 @RequestParam(defaultValue = "10", value = "limit") Integer pageSize,
+                                 WarehousingStockDto warehousingStockDto) {
+        PageInfo<WarehousingStock> page = warehouseStockService.stockCount(pageIndex, pageSize, warehousingStockDto);
+        return ResultInfo.success(page);
+    }
+
+
+    /**
+     * 库存管理统计 导出
+     */
+    @RequestMapping(value = "exportStock.do", method = RequestMethod.GET)
+    @ResponseBody
+    public ResultInfo exportStock(HttpServletResponse response, WarehousingStockDto warehousingStockDto) {
+        PageInfo<WarehousingStock> page = warehouseStockService.stockCount(1, 100000, warehousingStockDto);
+        List<WarehousingStock> list = page.getList();
+        // 通过工具类创建writer，默认创建xls格式
+        BigExcelWriter writer = (BigExcelWriter) ExcelUtil.getBigWriter();
+        writer.addHeaderAlias("equip_type_name", "装备类型");
+        writer.addHeaderAlias("equip_name_desc", "装备名称");
+        writer.addHeaderAlias("assets_type_code", "装备编码");
+        writer.addHeaderAlias("equip_num", "总数");
+        writer.addHeaderAlias("equip_stock_num", "库存数量");
+        writer.addHeaderAlias("equip_use_num", "在用数量");
+        writer.addHeaderAlias("totalPrice", "总价值（元）");
+
+        //只导出定义字段
+        writer.setOnlyAlias(true);
+        // 一次性写出内容，使用默认样式，强制输出标题
+        writer.write(list, true);
+        //out为OutputStream，需要写出到的目标流
+        //response为HttpServletResponse对象
+        response.setContentType("application/vnd.ms-excel;charset=utf-8");
+        //test.xls是弹出下载对话框的文件名，不能为中文，中文请自行编码
+        response.setHeader("Content-Disposition", "attachment;filename=test.xls");
+        ServletOutputStream out = null;
+        try {
+            out = response.getOutputStream();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        writer.flush(out, true);
+        // 关闭writer，释放内存
+        writer.close();
+        //此处记得关闭输出Servlet流
+        IoUtil.close(out);
+
+        return ResultInfo.success(page);
+    }
+
+    /**
+     * 月度转结 表头统计值
+     */
+    @RequestMapping(value = "carryOverCount.do", method = RequestMethod.GET)
+    @ResponseBody
+    public ResultInfo carryOverCount(WarehousingStockDto warehousingStockDto) {
+        return ResultInfo.success(warehouseStockService.carryOverCount(warehousingStockDto));
+    }
+
+    /**
+     * 确认月度转结
+     */
+    @RequestMapping(value = "carryOver.do", method = RequestMethod.GET)
+    @ResponseBody
+    public ResultInfo carryOver(WarehousingStockDto warehousingStockDto) {
+        warehouseStockService.carryOver(warehousingStockDto);
+        return ResultInfo.success();
+    }
+
+
+    private void outInWarehousing(WarehousingBorrow warehousingBorrow, WarehousingBorrow bean, Integer userOrDeptId, Integer equip_status) {
+        //入库明细 获取供应商id
+        Integer supplier_id = 999;
+        QueryWrapper<WarehousingEnterDetail> supplierEnterWrapper = new QueryWrapper<>();
+        supplierEnterWrapper.eq("equip_type", warehousingBorrow.getEquip_type());
+        supplierEnterWrapper.eq("equip_name", warehousingBorrow.getEquip_name());
+        supplierEnterWrapper.eq("equip_model", warehousingBorrow.getEquip_model());
+        List<WarehousingEnterDetail> supplierDetails = enterWarehouseDetailServiceImpl.list(supplierEnterWrapper);
+        if (!supplierDetails.isEmpty()) {
+            WarehousingEnter enter = enterWarehouseServiceImpl.getById(supplierDetails.get(0).getEnter_id());
+            if (enter != null && enter.getSupplier_id() != null) {
+                supplier_id = enter.getSupplier_id();
+            }
+        }
+
+        //入库详情
+        WarehousingEnter warehousingEnter = new WarehousingEnter();
+        List<WarehousingEnterDetail> enterDetails = new ArrayList<>();
+
+        //保存明细
+        for (WarehousingBorrowDetail detail : bean.getBorrowDetails()) {
+            //库存明细
+            QueryWrapper<WarehousingStockDetail> stockDetailQueryWrapper = new QueryWrapper<>();
+            stockDetailQueryWrapper.eq("equip_type", warehousingBorrow.getEquip_type());
+            stockDetailQueryWrapper.eq("equip_name", warehousingBorrow.getEquip_name());
+            stockDetailQueryWrapper.eq("equip_model", warehousingBorrow.getEquip_model());
+            stockDetailQueryWrapper.eq("produce_date", detail.getProduce_date());
+            stockDetailQueryWrapper.eq("warehouse_id", detail.getWarehouse_id());
+            List<WarehousingStockDetail> stockDetails = warehouseStockDetailMapper.selectList(stockDetailQueryWrapper);
+            BigDecimal unit_price = stockDetails.isEmpty() ? new BigDecimal(0) : stockDetails.get(0).getUnit_price();//单价
+            Integer use_year = stockDetails.isEmpty() ? 24 : stockDetails.get(0).getUse_year();//使用年限
+
+            //入库
+            warehousingEnter = new WarehousingEnter();
+            warehousingEnter.setEnter_name("借用入库申请单");
+            warehousingEnter.setEnter_time(new Date());
+            if(equip_status == 0){//0同意 1归还
+                warehousingEnter.setBorrow_dept_id(warehousingBorrow.getDept_id());
+            }else{
+                warehousingEnter.setBorrow_dept_id(warehousingBorrow.getUse_dept());
+            }
+
+            warehousingEnter.setSupplier_id(supplier_id);
+            //入库明细
+            WarehousingEnterDetail enterDetail = new WarehousingEnterDetail();
+            enterDetail.setEquip_type(warehousingBorrow.getEquip_type());
+            enterDetail.setEquip_name(warehousingBorrow.getEquip_name());
+            enterDetail.setEquip_model(warehousingBorrow.getEquip_model());
+            enterDetail.setWarehouse_id(detail.getWarehouse_id());
+            enterDetail.setProduce_date(detail.getProduce_date());
+            enterDetail.setEquip_num(detail.getEquip_num());
+            enterDetail.setEquip_status(equip_status);////装备状态 0:库存 1:在用
+            enterDetail.setUnit_price(unit_price);
+            enterDetail.setUse_year(use_year);
+            if(equip_status == 0){//0同意 1归还
+                enterDetail.setUse_dept(warehousingBorrow.getDept_id());
+            }else{
+                enterDetail.setUse_dept(warehousingBorrow.getUse_dept());
+            }
+            enterDetails.add(enterDetail);
+
+            //出库
+            WarehousingDelivery warehousingDelivery = new WarehousingDelivery();
+            warehousingDelivery.setDelivery_name("借出出库申请单");
+            warehousingDelivery.setDelivery_time(new Date());
+            warehousingDelivery.setDelivery_type(1);//出库类型: 1:调拨: 2:借用 3:处置
+            warehousingDelivery.setDept_id(userOrDeptId);
+            if (equip_status == 0) {//0同意 1归还
+                warehousingDelivery.setWarehouse_id(detail.getWarehouse_id());
+            }
+            warehousingDelivery.setBorrow_use_dept(userOrDeptId);
+            warehousingDelivery.setEquip_status(equip_status);//装备状态 0:库存 1:在用
+            //出库明细
+            List<WarehousingDeliveryDetail> deliveryDetails = new ArrayList<>();
+            WarehousingDeliveryDetail deliveryDetail = new WarehousingDeliveryDetail();
+            deliveryDetail.setEquip_type(warehousingBorrow.getEquip_type());
+            deliveryDetail.setEquip_name(warehousingBorrow.getEquip_name());
+            deliveryDetail.setEquip_model(warehousingBorrow.getEquip_model());
+            deliveryDetail.setDelivery_num(detail.getEquip_num());
+            deliveryDetail.setProduce_date(detail.getProduce_date());
+            deliveryDetails.add(deliveryDetail);
+            //执行出库
+            warehousingDelivery.setDeliveryDetails(deliveryDetails);
+            deliveryWarehouseService.add(warehousingDelivery);
+
+            detail.setWarehousing_borrow_id(warehousingBorrow.getId());
+            detail.insertOrUpdate();
+
+        }
+        //执行入库
+        warehousingEnter.setEnterDetails(enterDetails);
+        enterWarehouseService.add(warehousingEnter, "");
+
+
+    }
+}

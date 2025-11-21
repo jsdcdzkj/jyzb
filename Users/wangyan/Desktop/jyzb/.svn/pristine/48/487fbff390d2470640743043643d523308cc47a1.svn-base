@@ -1,0 +1,279 @@
+<template>
+  <div class="app-container">
+    <div class="filter_container">
+      <moduleTitle title="条件筛选"></moduleTitle>
+      <div class="filter_box">
+        <el-form :inline="true" class="demo-form-inline topsearch" @submit.native.prevent>
+          <el-form-item>
+            <el-input v-model="assets_type_name" size="small" placeholder="名称" :maxlength="50" clearable
+              @keyup.enter.native="fetchData" />
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="primary" icon="el-icon-search" @click="fetchData">查询</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="default" icon="el-icon-refresh" @click="refresh">重置</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-upload ref="uploadFile" :limit="1"
+              accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+              :show-file-list="false" :action="uploadUrl" :on-error="handleError" :before-upload="handleBeforeUpload"
+              :headers="{ 'accesstoken': token }" :on-success="handleSuccess">
+              <el-button size="small" type="success" icon="el-icon-upload">导入</el-button>
+            </el-upload>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="warning" icon="el-icon-download" @click="downTemplate">模版下载</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="warning" icon="el-icon-download" @click="exportAllTreeData">数据导出</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+    <div class="content-box">
+      <moduleTitle title="装备列表"></moduleTitle>
+      <div class="el-table-box">
+        <el-table v-loading="listLoading" :data="list" element-loading-text="Loading" stripe border fit height="100%"
+          highlight-current-row :tree-props="{ children: 'children', hasChildren: 'spread' }" row-key="id"
+          default-expand-all>
+          <el-table-column label="名称" prop="title"></el-table-column>
+          <el-table-column label="编码" prop="code" align="center"></el-table-column>
+          <el-table-column label="简介" prop="remarks" align="left"></el-table-column>
+          <el-table-column align="center" label="应急统计">
+            <template #default="{row}">
+              <span v-if="row.is_statistics==1">是</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="180">
+            <template #default="{ row }">
+              <el-button type="success" size="mini" @click="handleAdd(row)" v-if="row.level !== 2">
+                新增
+              </el-button>
+              <template v-if="row.level !== 0">
+                <el-button type="primary" size="mini" @click="handleEdit(row)">
+                  编辑
+                </el-button>
+                <el-button type="danger" size="mini" @click="del(row.id)">
+                  删除
+                </el-button>
+              </template>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <edit ref="edit" @fetch-data="fetchData" :selectList="selectList" :select="nowCate"></edit>
+    <el-dialog title="异常提示" :visible.sync="dialogVisible" width="500px">
+      <div class="tips_box">
+        <div v-for="el, index in errorInfo" :key="index">
+          第{{ el.rowNum }}行：{{ el.error.join(',') }}
+        </div>
+      </div>
+      <div slot="footer" style="text-align: center">
+        <el-button @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" :loading="btn_loading" @click="sureImport">跳过异常，继续导入</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import Edit from './components/edit'
+import {getEquipmentTree, delEquipment, downTemplate, importFile, exportAllTreeData} from '@/api/system'
+let loadingModal = null;
+export default {
+  components: {
+    Edit
+  },
+  data() {
+    return {
+      dialogVisible: false,
+      errorInfo: [],
+      uploadUrl: process.env.VUE_APP_BASE_API + '/file/uploadFiles',
+      assets_type_name: '',
+      nowCate: '',
+      list: [],
+      listLoading: false,
+      selectList: [],
+      fileId: '',
+      btn_loading: false
+    }
+  },
+  computed: {
+    token() {
+      return this.$store.getters.token
+    }
+  },
+  created() {
+    this.fetchData();
+  },
+  methods: {
+    refresh() {
+      this.assets_type_name = '';
+      this.fetchData();
+    },
+    handleBeforeUpload() {
+      loadingModal = this.$loading({
+        lock: true,
+        text: '上传中，请稍后',
+        spinner: 'el-icon-loading',
+        background: 'rgba(255, 255, 255, 0.7)'
+      });
+    },
+    handleSuccess(res) {
+      if (res.code === 0) {
+        this.fileId = res.data[0].id;
+        importFile({ fileId: this.fileId }).then(res => {
+          if (res.data) {
+            this.errorInfo = res.data;
+            this.dialogVisible = true;
+          } else {
+            this.$message.success('导入成功');
+            this.fetchData();
+          }
+          loadingModal && loadingModal.close();
+        }).catch(err => {
+          loadingModal && loadingModal.close();
+          console.log(err);
+        })
+      } else {
+        this.$message.error('上传失败');
+        loadingModal && loadingModal.close();
+      }
+      this.$nextTick(() => {
+        this.$refs.uploadFile.clearFiles();
+      })
+    },
+    sureImport() {
+      this.btn_loading = true;
+      importFile({ fileId: this.fileId, is_save: 1 }).then(res => {
+        this.$message.success('导入成功');
+        this.fetchData();
+        this.dialogVisible = false;
+        this.btn_loading = false;
+      }).catch(err => {
+        this.btn_loading = false;
+      })
+    },
+    handleError() {
+      this.$message.error('上传失败');
+      loadingModal && loadingModal.close();
+    },
+    downTemplate() {
+      var that = this;
+      downTemplate().then(res => {
+        const reader = new FileReader();
+        reader.readAsText(res.data, "utf-8");
+        reader.onload = function () {
+          try {
+            const jsondata = JSON.parse(reader.result);
+            if (jsondata && jsondata.code) {
+              if (jsondata.code == 500) {
+                that.$message.error(jsondata.msg);
+              }
+            } else {
+              // 异常处理
+            }
+          } catch (err) {
+            // 成功
+            const objectUrl = URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement("a");
+            link.download = decodeURI('装备模版.xls');
+            link.href = objectUrl;
+            link.click();
+            that.$message.success("下载成功！");
+          }
+        };
+      })
+    },
+    exportAllTreeData() {
+      var that = this;
+      exportAllTreeData().then(res => {
+        const reader = new FileReader();
+        reader.readAsText(res.data, "utf-8");
+        reader.onload = function () {
+          try {
+            const jsondata = JSON.parse(reader.result);
+            if (jsondata && jsondata.code) {
+              if (jsondata.code == 500) {
+                that.$message.error(jsondata.msg);
+              }
+            } else {
+              // 异常处理
+            }
+          } catch (err) {
+            // 成功
+            const objectUrl = URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement("a");
+            link.download = decodeURI('装备数据.xls');
+            link.href = objectUrl;
+            link.click();
+            that.$message.success("下载成功！");
+          }
+        };
+      })
+    },
+    handleAdd(row) {
+      this.nowCate = row.id;
+      if (row.level == 1) {
+        this.selectList = this.list.find(el => el.id == row.parent_id).children;
+      } else {
+        this.selectList = this.list;
+      }
+      this.$nextTick(() => {
+        this.$refs.edit.showEdit({ level: row.level + 1 });
+      })
+    },
+    handleEdit(row) {
+      if (row.level == 1) {
+        this.selectList = this.list;
+      } else {
+        let list = [];
+        this.list.some(el => {
+          if (el.children.some(item => item.id == row.parent_id)) {
+            list = el.children;
+            return true
+          } else {
+            return false;
+          }
+        })
+        this.selectList = list;
+      }
+      this.$nextTick(() => {
+        this.$refs.edit.showEdit(row);
+      })
+    },
+    fetchData() {
+      this.listLoading = true;
+      getEquipmentTree({ assets_type_name: this.assets_type_name }).then((response) => {
+        this.list = response.data;
+        this.listLoading = false;
+      })
+    },
+    del(id) {
+      this.$confirm('您是否确认删除该项？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        delEquipment({ id }).then(() => {
+          this.$message({
+            message: '删除成功',
+            type: 'success'
+          })
+          this.fetchData();
+        })
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.tips_box {
+  max-height: 400px;
+  line-height: 1.6;
+  overflow: auto;
+}
+</style>

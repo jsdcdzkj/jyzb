@@ -1,0 +1,777 @@
+package com.jsdc.rfid.service;
+
+import cn.hutool.poi.excel.ExcelReader;
+import cn.hutool.poi.excel.ExcelUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.google.api.client.util.Lists;
+import com.jsdc.core.base.BaseService;
+import com.jsdc.rfid.common.G;
+import com.jsdc.rfid.dao.SysDepartmentDao;
+import com.jsdc.rfid.dao.warehouse.WarehousingEnterDao;
+import com.jsdc.rfid.mapper.SysDepartmentMapper;
+import com.jsdc.rfid.model.*;
+import com.jsdc.rfid.model.warehouse.*;
+import com.jsdc.rfid.utils.ExcelUtils;
+import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.multipart.MultipartFile;
+import vo.ResultInfo;
+import vo.SysDepartmentVo;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+/**
+ * @author wp
+ */
+
+@Service
+@Transactional
+public class SysDepartmentService extends BaseService<SysDepartmentDao, SysDepartment> {
+
+    @Autowired
+    private SysUserService userService;
+    @Autowired
+    private SysDepartmentMapper departmentMapper;
+    @Autowired
+    private SysDepartmentMapper sysDepartmentMapper;
+    @Autowired
+    private WarehouseService warehouseService;
+    @Autowired
+    private WarehousingEnterDao warehousingEnterDao;
+    @Autowired
+    private SysUserService sysUserService;
+
+    /**
+     * 部门列表查询
+     *
+     * @param department
+     * @return
+     */
+    public List<SysDepartment> getList(SysDepartment department) {
+        return selectList(getWrapper(department));
+    }
+
+    /**
+     * 部门分页查询
+     *
+     * @param department
+     * @param pageIndex
+     * @param pageSize
+     * @return
+     */
+    public PageInfo<SysDepartmentVo> getPage(SysDepartment department, Integer pageIndex, Integer pageSize) {
+        PageHelper.startPage(pageIndex, pageSize);
+        List<SysDepartmentVo> list = departmentMapper.getPage(department);
+        return new PageInfo<>(list);
+    }
+
+
+    public List<SysDepartment> loadTree(SysDepartment department){
+        LambdaUpdateWrapper<SysDepartment> wrapper = new LambdaUpdateWrapper<>();
+        if(StringUtils.isNotEmpty(department.getDept_name())){
+            wrapper.like(SysDepartment::getDept_name, department.getDept_name().trim());
+        }
+        wrapper.eq(SysDepartment::getIs_del, G.ISDEL_NO);
+        List<SysDepartment> list = selectList(wrapper).stream().map(d->{
+            if(d.getParent_dept()==null)
+                d.setParent_dept(0);
+            return d;}).collect(Collectors.toList());
+        return list;
+    }
+
+    /**
+     * 新增部门
+     *
+     * @param department
+     * @return
+     */
+    public SysDepartment add(@NonNull SysDepartment department) {
+        if (validata(department)) {
+            SysUser user = userService.getUser();
+            department.setCreate_time(new Date());
+            department.setCreate_user(user.getId());
+            department.setUpdate_time(new Date());
+            department.setUpdate_user(user.getId());
+            department.setIs_del(G.ISDEL_NO);
+            department.setIs_enable(G.ISENABLE_YES);
+            department.setParent_dept(null == department.getParent_dept() ? 0 : department.getParent_dept());
+            if (insert(department) > 0) {
+                return department;
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 编辑部门
+     *
+     * @param department
+     * @return
+     */
+    public SysDepartment edit(@NonNull SysDepartment department) {
+        if (validata(department)) {
+            SysUser user = userService.getUser();
+            SysDepartment original = selectById(department.getId());
+            long oa_dept_id = original.getOa_dept_id();
+            BeanUtils.copyProperties(department, original);
+            original.setOa_dept_id(oa_dept_id);
+            original.setParent_dept(null == original.getParent_dept()?0:original.getParent_dept());
+            original.setUpdate_user(user.getId());
+            original.setUpdate_time(new Date());
+            if (updateById(original) > 0) {
+                return original;
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 删除部门
+     *
+     * @param id
+     * @return
+     */
+    public Boolean delete(@NonNull Integer id) {
+        SysUser user = new SysUser();
+        SysDepartment department = selectById(id);
+        department.setUpdate_time(new Date());
+        department.setUpdate_user(user.getId());
+        department.setIs_del(G.ISDEL_YES);
+
+        //清空对应的仓库
+        UpdateWrapper<Warehouse> warehouseQueryWrapper = new UpdateWrapper<>();
+        warehouseQueryWrapper.eq("dept_id",id);
+        warehouseQueryWrapper.set("is_del",G.ISDEL_YES);
+        warehouseService.update(null, warehouseQueryWrapper);
+
+        if(updateById(department) > 0){
+            update(null, Wrappers.<SysDepartment>lambdaUpdate().set(SysDepartment::getParent_dept, department.getParent_dept()).eq(SysDepartment::getParent_dept, id));
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    /**
+     * 统一处理查询条件
+     *
+     * @param department
+     * @return
+     */
+    private LambdaQueryWrapper<SysDepartment> getWrapper(SysDepartment department) {
+        LambdaQueryWrapper<SysDepartment> wrapper = new LambdaQueryWrapper<>();
+        if (null != department) {
+            if (StringUtils.isNotEmpty(department.getDept_name())) {
+                wrapper.like(SysDepartment::getDept_name, department.getDept_name());
+            }
+            if (StringUtils.isNotEmpty(department.getDept_code())) {
+                wrapper.like(SysDepartment::getDept_code, department.getDept_code());
+            }
+            if (null != department.getDept_position()) {
+                wrapper.eq(SysDepartment::getDept_position, department.getDept_position());
+            }
+            if (null != department.getParent_dept()) {
+                wrapper.eq(SysDepartment::getParent_dept, department.getParent_dept());
+            }
+        }
+        wrapper.eq(SysDepartment::getIs_del, G.ISDEL_NO);
+        wrapper.eq(SysDepartment::getIs_enable, G.ISENABLE_YES);
+        return wrapper;
+    }
+
+    /**
+     * 验证必填条件
+     *
+     * @param department
+     * @return
+     */
+    private boolean validata(SysDepartment department) {
+        if (StringUtils.isEmpty(department.getDept_name())
+                || StringUtils.isEmpty(department.getDept_code())) {
+            return false;
+        }
+        if (null != department.getId() && null != selectById(department.getId())){
+            int num = selectCount(Wrappers.<SysDepartment>lambdaQuery().eq(SysDepartment::getIs_del, G.ISDEL_NO)
+                    .and(i -> i.eq(SysDepartment::getDept_name, department.getDept_name())
+                            .or().eq(SysDepartment::getDept_code, department.getDept_code()))
+                    .ne(SysDepartment::getId, department.getId())
+            );
+            return num <= 0;
+        }else {
+            int num = selectCount(Wrappers.<SysDepartment>lambdaQuery().eq(SysDepartment::getIs_del, G.ISDEL_NO)
+                    .and(i -> i.eq(SysDepartment::getDept_name, department.getDept_name())
+                            .or().eq(SysDepartment::getDept_code, department.getDept_code()))
+            );
+            return num <= 0;
+        }
+    }
+
+
+    public JSONArray treeDeptList(JSONArray deptList, int parentId) {
+        JSONArray child = new JSONArray();
+        for (Object object : deptList) {
+            JSONObject jsonMenu = (JSONObject) object;
+            int menuId = jsonMenu.getInteger("id");
+            int pid = jsonMenu.getInteger("parent_id");
+            if (parentId == pid) {
+                JSONArray c_node = treeDeptList(deptList, menuId);
+                jsonMenu.put("children", c_node);
+                child.add(jsonMenu);
+            }
+        }
+        return child;
+    }
+
+    public void treeIdDeptList(List<SysDepartment> deptList,List<Integer> ids, int parentId) {
+        for (SysDepartment sysDepartment : deptList) {
+            int id = sysDepartment.getId();
+            int pid = sysDepartment.getParent_dept();
+            if (parentId == pid) {
+                ids.add(id);
+                treeIdDeptList(deptList,ids,id);
+            }
+        }
+    }
+
+
+    public JSONArray getTree(SysDepartment sysDepartment) {
+        if(sysDepartment.getId()==null){
+            sysDepartment.setId(userService.getUser().getDepartment());
+        }
+        // 查询所有未删除的部门记录
+        List<SysDepartment> allDepartments = selectList(Wrappers.<SysDepartment>lambdaQuery()
+                .eq(SysDepartment::getIs_del, "0"));
+
+        // 根据传入的 sysDepartment 进行模糊匹配和父类ID筛选
+        List<SysDepartment> filteredDepartments = allDepartments.stream()
+                .filter(department -> {
+                    // 检查名称是否符合条件：名称为空或匹配
+                    boolean nameMatches = sysDepartment == null || StringUtils.isEmpty(sysDepartment.getDept_name()) ||
+                            department.getDept_name().contains(sysDepartment.getDept_name());
+
+                    // 检查父类ID是否符合条件：如果传入了父类ID，则进行匹配；如果没有传入，则忽略父类ID过滤
+                    boolean parentIdMatches = sysDepartment == null || sysDepartment.getParent_dept() == null ||
+                            department.getParent_dept().equals(sysDepartment.getParent_dept());
+
+                    // 只有在名称和父类ID都满足条件时，才包含在结果中
+                    return nameMatches && parentIdMatches;
+                })
+                .collect(Collectors.toList());
+
+        // 将筛选结果及其所有父级节点添加到目标集合中
+        Set<SysDepartment> departmentsTarget = new HashSet<>(filteredDepartments);
+        addParentDepartments(departmentsTarget, allDepartments);
+
+        // 按照 ID 排序
+        List<SysDepartment> sortedDepartments = departmentsTarget.stream()
+                .sorted(Comparator.comparing(SysDepartment::getId))
+                .collect(Collectors.toList());
+
+        // 构建树形结构数据
+        JSONArray treeData = new JSONArray();
+        sortedDepartments.forEach(department -> {
+            JSONObject item = new JSONObject();
+            item.put("id", department.getId());
+            item.put("title", department.getDept_name());
+            item.put("code", department.getDept_code());
+            item.put("hasChildren", true);
+            item.put("parent_id", department.getParent_dept() == null || department.getParent_dept().equals(0) ? 0 : department.getParent_dept());
+            treeData.add(item);
+        });
+        Integer parentId = 0;
+        if(sysDepartment.getId()!=null){
+            parentId = sysDepartment.getId();
+        }
+        // 返回构建的树形结构
+        JSONArray array = treeList(treeData, parentId, 0);
+        List<JSONObject> deptList = sortedDepartments.stream().filter(t->t.getId().equals(sysDepartment.getId())).map(department -> {
+            JSONObject item = new JSONObject();
+            item.put("id", department.getId());
+            item.put("title", department.getDept_name());
+            item.put("code", department.getDept_code());
+            item.put("hasChildren", true);
+            item.put("parent_id", department.getParent_dept() == null || department.getParent_dept().equals(0) ? 0 : department.getParent_dept());
+            return item;
+        }).collect(Collectors.toList());
+        if(deptList.size()>0){
+            array.add(0,deptList.get(0));
+        }
+        return array;
+    }
+
+    public JSONArray getTreeList(SysDepartment sysDepartment) {
+        if(sysDepartment.getId()==null){
+            sysDepartment.setId(userService.getUser().getDepartment());
+        }
+        // 查询所有未删除的部门记录
+        List<SysDepartment> allDepartments = selectList(Wrappers.<SysDepartment>lambdaQuery()
+                .eq(SysDepartment::getIs_del, "0")
+                .isNotNull(SysDepartment::getParent_dept));
+
+        // 根据传入的 sysDepartment 进行模糊匹配和父类ID筛选
+        List<SysDepartment> filteredDepartments = allDepartments.stream()
+                .filter(department -> {
+                    // 检查名称是否符合条件：名称为空或匹配
+                    boolean nameMatches = sysDepartment == null || StringUtils.isEmpty(sysDepartment.getDept_name()) ||
+                            department.getDept_name().contains(sysDepartment.getDept_name());
+
+                    // 检查父类ID是否符合条件：如果传入了父类ID，则进行匹配；如果没有传入，则忽略父类ID过滤
+                    boolean parentIdMatches = sysDepartment == null || sysDepartment.getParent_dept() == null ||
+                            department.getParent_dept().equals(sysDepartment.getParent_dept());
+
+                    // 只有在名称和父类ID都满足条件时，才包含在结果中
+                    return nameMatches && parentIdMatches;
+                })
+                .collect(Collectors.toList());
+
+        // 将筛选结果及其所有父级节点添加到目标集合中
+        Set<SysDepartment> departmentsTarget = new HashSet<>(filteredDepartments);
+        addParentDepartments(departmentsTarget, allDepartments);
+
+        // 按照 ID 排序
+        List<SysDepartment> sortedDepartments = departmentsTarget.stream()
+                .sorted(Comparator.comparing(SysDepartment::getId))
+                .collect(Collectors.toList());
+
+        // 构建树形结构数据
+        JSONArray treeData = new JSONArray();
+        sortedDepartments.forEach(department -> {
+            JSONObject item = new JSONObject();
+            item.put("id", department.getId());
+            item.put("title", department.getDept_name());
+            item.put("code", department.getDept_code());
+            item.put("level", department.getLevel());
+            item.put("hasChildren", true);
+            item.put("parent_id", department.getParent_dept() == null || department.getParent_dept().equals(0) ? 0 : department.getParent_dept());
+            treeData.add(item);
+        });
+
+
+        Integer currentDepartmentId = 0;
+        //默认所属部门数据 不等于超级管理以 没有开启权限
+        if (userService.getUser().getDepartment() != null && !userService.getUser().getLogin_name().equals("admin") && sysDepartment.getIs_permission() != 0) {
+            currentDepartmentId = userService.getUser().getDepartment();
+        }
+
+        // 返回构建的树形结构，包含当前部门节点
+        JSONArray array = treeList(treeData, currentDepartmentId, 0);
+
+        //默认所属部门数据 不等于超级管理以 没有开启权限
+        if (userService.getUser().getDepartment() != null && !userService.getUser().getLogin_name().equals("admin") && sysDepartment.getIs_permission() != 0) {
+            JSONObject item = new JSONObject();
+            SysDepartment department = sysDepartmentMapper.selectById(currentDepartmentId);
+            item.put("id", department.getId());
+            item.put("title", department.getDept_name());
+            item.put("code", department.getDept_code());
+            item.put("level", department.getLevel());
+            item.put("hasChildren", true);
+            item.put("parent_id", department.getParent_dept() == null || department.getParent_dept().equals(0) ? 0 : department.getParent_dept());
+            item.put("children",array);
+            JSONArray children = new JSONArray();
+            children.add(item);
+            array = children;
+        }
+
+        return array;
+    }
+
+    public JSONArray getTreeListTwo(SysDepartment sysDepartment) {
+        if(sysDepartment.getId()==null){
+            sysDepartment.setId(userService.getUser().getDepartment());
+        }
+        // 查询所有未删除的部门记录
+        List<SysDepartment> allDepartments = selectList(Wrappers.<SysDepartment>lambdaQuery()
+                .in(SysDepartment::getLevel, "2","3")
+                .eq(SysDepartment::getIs_del, "0"));
+
+        // 根据传入的 sysDepartment 进行模糊匹配和父类ID筛选
+        List<SysDepartment> filteredDepartments = allDepartments.stream()
+                .filter(department -> {
+                    // 检查名称是否符合条件：名称为空或匹配
+                    boolean nameMatches = sysDepartment == null || StringUtils.isEmpty(sysDepartment.getDept_name()) ||
+                            department.getDept_name().contains(sysDepartment.getDept_name());
+
+                    // 检查父类ID是否符合条件：如果传入了父类ID，则进行匹配；如果没有传入，则忽略父类ID过滤
+                    boolean parentIdMatches = sysDepartment == null || sysDepartment.getParent_dept() == null ||
+                            department.getParent_dept().equals(sysDepartment.getParent_dept());
+
+                    // 只有在名称和父类ID都满足条件时，才包含在结果中
+                    return nameMatches && parentIdMatches;
+                })
+                .collect(Collectors.toList());
+
+        // 将筛选结果及其所有父级节点添加到目标集合中
+        Set<SysDepartment> departmentsTarget = new HashSet<>(filteredDepartments);
+        addParentDepartments(departmentsTarget, allDepartments);
+
+        // 按照 ID 排序
+        List<SysDepartment> sortedDepartments = departmentsTarget.stream()
+                .sorted(Comparator.comparing(SysDepartment::getId))
+                .collect(Collectors.toList());
+
+        // 构建树形结构数据
+        JSONArray treeData = new JSONArray();
+        sortedDepartments.forEach(department -> {
+            JSONObject item = new JSONObject();
+            item.put("id", department.getId());
+            item.put("title", department.getDept_name());
+            item.put("code", department.getDept_code());
+            item.put("level", department.getLevel());
+            item.put("hasChildren", true);
+            item.put("parent_id", department.getParent_dept() == null || department.getParent_dept().equals(0) ? 0 : department.getParent_dept());
+            treeData.add(item);
+        });
+
+
+        Integer currentDepartmentId = 0;
+        //默认所属部门数据 不等于超级管理以 没有开启权限
+        if (userService.getUser().getDepartment() != null) {
+            currentDepartmentId = userService.getUser().getDepartment();
+        }
+
+        // 返回构建的树形结构，包含当前部门节点
+        JSONArray array = new JSONArray();
+        if(sysUserService.getUser().getLogin_name().equals("admin")){
+            List<SysDepartment> sysDepartmentList = selectList(Wrappers.<SysDepartment>lambdaQuery()
+                    .in(SysDepartment::getLevel, "1")
+                    .eq(SysDepartment::getIs_del, "0"));
+            for (SysDepartment department : sysDepartmentList) {
+                JSONArray arrayNew = treeList(treeData, department.getId(), 0);
+                array.addAll(arrayNew);
+            }
+        }else{
+            array = treeList(treeData, currentDepartmentId, 0);
+        }
+
+        //默认所属部门数据 不等于超级管理以 没有开启权限
+        if (userService.getUser().getDepartment() != null && !sysUserService.getUser().getLogin_name().equals("admin")) {
+            JSONObject item = new JSONObject();
+            SysDepartment department = sysDepartmentMapper.selectById(currentDepartmentId);
+            item.put("id", department.getId());
+            item.put("title", department.getDept_name());
+            item.put("code", department.getDept_code());
+            item.put("level", department.getLevel());
+            item.put("hasChildren", true);
+            item.put("parent_id", department.getParent_dept() == null || department.getParent_dept().equals(0) ? 0 : department.getParent_dept());
+            item.put("children",array);
+            JSONArray children = new JSONArray();
+            children.add(item);
+            array = children;
+        }
+
+        return array;
+    }
+
+    public List<SysDepartment> getThree(SysDepartment sysDepartment) {
+        Integer department = userService.getUser().getDepartment();
+        SysDepartment sysDepartmentNew = sysDepartmentMapper.selectById(department);
+        List<SysDepartment> allDepartments = selectList(Wrappers.<SysDepartment>lambdaQuery()
+                .eq(SysDepartment::getLevel, "3")
+                .eq(SysDepartment::getIs_del, "0")
+                .eq(sysDepartmentNew.getLevel() == 2, SysDepartment::getParent_dept, sysDepartmentNew.getId())
+        );
+        return allDepartments;
+    }
+
+    //合并派出所
+    public String merge(SysDepartment sysDepartment) {
+        //需要转移派出所
+        Integer new_id = sysDepartment.getNew_id();
+        //合并源数据id
+        List<Integer> sourceIds = sysDepartment.getSource_ids();
+        for (Integer sourceId : sourceIds) {
+            //删除
+            if(!Objects.equals(sourceId, new_id)){
+                SysDepartment sysDepartmentNew = new SysDepartment();
+                sysDepartmentNew = sysDepartmentNew.selectById(sourceId);
+                sysDepartmentNew.setIs_del("1");
+//                sysDepartmentNew.updateById();
+            }
+        }
+
+
+        Thread thread = new Thread(() -> {
+            System.out.println("异步线程运行中...");
+            // 在这里执行异步操作
+            for (Integer sourceId : sourceIds) {
+                //所属用户
+                List<SysUser> sysUserList = new SysUser().selectList(Wrappers.<SysUser>lambdaQuery().eq(SysUser::getDepartment, sourceId));
+                for (SysUser sysUser : sysUserList) {
+                    sysUser.setDepartment(new_id);
+                    sysUser.updateById();
+                }
+
+                /*所属仓库*/
+                List<Warehouse> warehouseList = new Warehouse()
+                        .selectList(Wrappers.<Warehouse>lambdaQuery()
+                                .eq(Warehouse::getDept_id, sourceId));
+                for (Warehouse warehouse : warehouseList) {
+                    warehouse.setDept_id(new_id);
+                    warehouse.updateById();
+                }
+
+                /*入库*/
+                List<WarehousingEnter> warehousingEnterList = new WarehousingEnter()
+                        .selectList(Wrappers.<WarehousingEnter>lambdaQuery()
+                                .eq(WarehousingEnter::getDept_id, sourceId));
+                for (WarehousingEnter warehousingEnter : warehousingEnterList) {
+                    warehousingEnter.setDept_id(new_id);
+                    warehousingEnter.updateById();
+
+                    //入库详情
+                    List<WarehousingEnterDetail> warehousingEnterDetailList = new WarehousingEnterDetail()
+                            .selectList(Wrappers.<WarehousingEnterDetail>lambdaQuery()
+                                    .eq(WarehousingEnterDetail::getEnter_id,warehousingEnter.getId()));
+                    for (WarehousingEnterDetail warehousingEnterDetail : warehousingEnterDetailList) {
+                        warehousingEnterDetail.setUse_dept(new_id);
+//                        warehousingEnterDetail.updateById();
+                    }
+
+                }
+
+                /*出库*/
+                List<WarehousingDelivery> warehousingDeliveryList = new WarehousingDelivery()
+                        .selectList(Wrappers.<WarehousingDelivery>lambdaQuery()
+                                .eq(WarehousingDelivery::getDept_id, sourceId));
+                for (WarehousingDelivery warehousingDelivery : warehousingDeliveryList) {
+                    warehousingDelivery.setDept_id(new_id);
+                    warehousingDelivery.updateById();
+
+                    //出库详情
+                    List<WarehousingDeliveryDetail> warehousingDeliveryDetailList = new WarehousingDeliveryDetail()
+                            .selectList(Wrappers.<WarehousingDeliveryDetail>lambdaQuery()
+                                    .eq(WarehousingDeliveryDetail::getDelivery_id,warehousingDelivery.getId()));
+                    for (WarehousingDeliveryDetail warehousingDeliveryDetail : warehousingDeliveryDetailList) {
+                        warehousingDeliveryDetail.setUse_dept(new_id);
+//                        warehousingDeliveryDetail.updateById();
+                    }
+                }
+
+                //库存
+                List<WarehousingStock> warehousingStockList = new WarehousingStock()
+                        .selectList(Wrappers.<WarehousingStock>lambdaQuery()
+                                .eq(WarehousingStock::getDept_id,sourceId));
+
+                for (WarehousingStock warehousingStock : warehousingStockList) {
+                    warehousingStock.setDept_id(new_id);
+                    warehousingStock.updateById();
+                }
+
+                //库存详情
+                List<WarehousingStockDetail> warehousingStockDetailList = new WarehousingStockDetail()
+                        .selectList(Wrappers.<WarehousingStockDetail>lambdaQuery()
+                                .eq(WarehousingStockDetail::getDept_id,sourceId));
+                for (WarehousingStockDetail warehousingStockDetail : warehousingStockDetailList) {
+                    warehousingStockDetail.setUse_dept(new_id);
+                    warehousingStockDetail.setDept_id(new_id);
+//                    warehousingStockDetail.updateById();
+                }
+
+                /*月度结算*/
+                List<WarehousingStockCarryOver> warehousingStockCarryOverList = new WarehousingStockCarryOver()
+                        .selectList(Wrappers.<WarehousingStockCarryOver>lambdaQuery()
+                                .eq(WarehousingStockCarryOver::getDept_id, sourceId));
+                for(WarehousingStockCarryOver warehousingStockCarryOver : warehousingStockCarryOverList){
+                    warehousingStockCarryOver.setDept_id(new_id);
+                    warehousingStockCarryOver.updateById();
+                }
+
+            }
+            System.out.println("异步线程完成");
+        });
+
+        thread.start(); // 启动线程
+        System.out.println("主线程继续运行...");
+
+        return "success";
+    }
+
+    // 递归查找并添加所有父级部门
+    private void addParentDepartments(Set<SysDepartment> departmentsTarget, List<SysDepartment> allDepartments) {
+        // 使用队列迭代父节点
+        Queue<Integer> parentIdsQueue = new LinkedList<>();
+        departmentsTarget.stream()
+                .map(SysDepartment::getParent_dept)
+                .filter(parentId -> parentId != 0)
+                .forEach(parentIdsQueue::offer);
+
+        // 查找所有父节点并加入集合
+        while (!parentIdsQueue.isEmpty()) {
+            Integer parentId = parentIdsQueue.poll();
+            allDepartments.stream()
+                    .filter(department -> department.getId().equals(parentId))
+                    .findFirst()
+                    .ifPresent(parentDepartment -> {
+                        if (departmentsTarget.add(parentDepartment) && parentDepartment.getParent_dept() != 0) {
+                            parentIdsQueue.offer(parentDepartment.getParent_dept());
+                        }
+                    });
+        }
+    }
+
+    // 递归构建树形结构
+    public JSONArray treeList(JSONArray dataList, int parentId, int depth) {
+        JSONArray children = new JSONArray();
+        for (Object obj : dataList) {
+            JSONObject jsonItem = (JSONObject) obj;
+            int id = jsonItem.getInteger("id");
+            int parent = jsonItem.getInteger("parent_id");
+
+            if (parentId == parent) {
+                JSONArray childNodes = treeList(dataList, id, depth + 1);
+                if (childNodes.isEmpty()) {
+                    jsonItem.put("hasChildren", false);
+                }
+                jsonItem.put("children", childNodes);
+//                jsonItem.put("level", depth); // 为节点设置深度
+                children.add(jsonItem);
+            }
+        }
+        return children;
+    }
+
+
+    public List<Integer> getTreeId(Integer id){
+        List<SysDepartment> list = selectList(Wrappers.<SysDepartment>lambdaQuery().
+                eq(SysDepartment::getIs_del, "0").isNotNull(SysDepartment::getParent_dept));
+        List<Integer> ids = new ArrayList<>();
+        Integer parentId = id!=null?id:0;
+        ids.add(parentId);
+        treeIdDeptList(list,ids,parentId);
+        return ids;
+    }
+
+    /**
+     * 统计报表中所有一级部门
+     * @return
+     */
+    public List<SysDepartment> getAllDept(){
+        return selectList(Wrappers.<SysDepartment>lambdaQuery()
+                // 等于null 或者等于0
+                .and(i -> i.isNull(SysDepartment::getParent_dept).or().eq(SysDepartment::getParent_dept, 0)
+                        .eq(SysDepartment::getIs_del, G.ISDEL_NO)
+                ));
+    }
+
+    /**
+     * 获取所有部门名称
+     * @return
+     */
+    public Map<String,String> getAllDeptMap() {
+        Map<String, String> newmap = new HashMap<>();
+        List<SysDepartment> departments = getAllDept();
+        for (SysDepartment dept : departments) {
+            newmap.put(String.valueOf(dept.getId()), dept.getDept_name());
+        }
+        return newmap;
+    }
+
+    public  ArrayList<Integer> getDeptSon(Integer deptId) {
+        //拿取所有部门
+        List<SysDepartment> allSysDeptList = this.getList(null);
+        //收集部门以及子部门
+        ArrayList<Integer> childDeptList = new ArrayList<>();
+
+        childDeptList.add(deptId);
+        //进行递归
+        getDeptIdList(deptId, allSysDeptList, childDeptList);
+
+        return childDeptList;
+    }
+
+    private void getDeptIdList(Integer deptId, List<SysDepartment> allSysDeptList, List<Integer> childDeptList) {
+        // 遍历所有部门，查deptId的所有子部门
+        allSysDeptList.forEach(e -> {
+            // deptId=parentId为当前部门的直接子部门
+            if (deptId.equals(e.getParent_dept())) {
+                // 添加子部门
+                childDeptList.add(e.getId());
+                // 递归查deptId子部门下的子部门
+                this.getDeptIdList(e.getId(), allSysDeptList, childDeptList);
+            }
+        });
+    }
+
+    public List<Integer> getFjDept(Integer deptId){
+        List<Integer> childDeptIds = new ArrayList<>();
+        List<SysDepartment> list = selectList(Wrappers.<SysDepartment>lambdaQuery().eq(SysDepartment::getIs_del, G.ISDEL_NO));
+        SysDepartment root = list.stream().filter(d->d.getParent_dept()!=null&&d.getParent_dept().equals(0)).collect(Collectors.toList()).get(0);
+        List<SysDepartment> fjList = root!=null?list.stream().filter(d->d.getParent_dept()!=null&&d.getParent_dept().equals(root.getId())).collect(Collectors.toList()) : Lists.newArrayList();
+        for (SysDepartment fjDept: fjList) {
+            List<Integer> deptIds = getDeptSon(fjDept.getId());
+            if(deptIds.contains(deptId)){
+                childDeptIds = deptIds;
+                break;
+            }
+        }
+        return childDeptIds;
+    }
+
+    public ResultInfo importWarehousing(MultipartFile importFile) {
+        ExcelReader reader = null;
+        try {
+            reader = ExcelUtil.getReader(importFile.getInputStream());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        List<SysDepartment> sysDepartments = reader.readAll(SysDepartment.class);
+        StringBuilder stringBuilder = new StringBuilder();
+        for(SysDepartment department : sysDepartments){
+//            stringBuilder.append( "INSERT INTO sys_department ( dept_name, dept_code, parent_code, oa_dept_id, is_enable, is_del ) VALUES ( '"+department.getDept_name()+"', '"+department.getDept_code()+"', '"+department.getParent_code()+"', 0, 1, 0 );") ;
+            stringBuilder.append( "UPDATE sys_department AS t1 " +
+                    "JOIN (" +
+                    "    SELECT id AS parent_id, level + 1 AS new_level " +
+                    "    FROM sys_department " +
+                    "    WHERE dept_code = '"+department.getParent_code()+"' " +
+                    ") AS t2 " +
+                    "ON t1.dept_code = '"+department.getDept_code()+"' " +
+                    "SET t1.parent_dept = t2.parent_id, " +
+                    "    t1.level = t2.new_level; ") ;
+//            SysDepartment search = this.selectOne(Wrappers.<SysDepartment>lambdaQuery().eq(SysDepartment::getIs_del, G.ISDEL_NO).eq(SysDepartment::getDept_code, department.getDept_code()));
+//            SysDepartment search = new SysDepartment();
+//            SysDepartment bean;;
+            //            //父类
+//            SysDepartment searchPrent = this.selectOne(Wrappers.<SysDepartment>lambdaQuery().eq(SysDepartment::getIs_del, G.ISDEL_NO).eq(SysDepartment::getParent_code, department.getParent_code()));
+//            if(searchPrent != null){
+//                bean.setParent_dept(searchPrent.getId());
+//                bean.setLevel(searchPrent.getLevel()+1);
+//            }
+//            if(search != null){
+//                bean = search;;
+//            }else{
+//
+//            }
+//            bean = new SysDepartment();;
+//            bean.setIs_del(G.ISDEL_NO);
+//            bean.setIs_enable(1);
+//            bean.setLevel(1);
+//            bean.setCreate_time(new Date());
+//            department.insert();
+        }
+
+        return ResultInfo.success(stringBuilder);
+    }
+}

@@ -1,0 +1,156 @@
+import request from '@/utils/request'
+
+// 入库管理导入
+export function downTemplate(params) {
+  return request({
+    url: '/enterWarehouse/toExportTemplate.do',
+    method: 'get',
+    responseType: "blob",
+    params,
+  })
+}
+// 入库管理导入
+export function importFile(data) {
+  return request({
+    url: '/enterWarehouse/toImport.do',
+    method: 'post',
+    data
+  })
+}
+//入库接口
+export function getInOrderList(data) {
+  return request({
+    url: '/enterWarehouse/toList.do',
+    method: 'post',
+    data,
+  })
+}
+export function addInOrder(data) {
+  return request({
+    url: '/enterWarehouse/add.do',
+    method: 'post',
+    data,
+    headers:{
+      "Content-Type": "application/json;charset=UTF-8"
+    }
+  })
+}
+export function editInOrder(data) {
+  return request({
+    url: '/enterWarehouse/edit.do',
+    method: 'post',
+    data,
+    headers:{
+      "Content-Type": "application/json;charset=UTF-8"
+    }
+  })
+}
+export function inOrderDetail(params) {
+  return request({
+    url: '/enterWarehouse/detail.do',
+    method: 'get',
+    params,
+  })
+}
+//出库接口
+export function getOutOrderList(data) {
+  return request({
+    url: '/deliverWarehouse/toList.do',
+    method: 'post',
+    data,
+  })
+}
+export function getStockEquipList(params) {
+  return request({
+    url: '/stock/equipList.do',
+    method: 'get',
+    params,
+  })
+}
+export function addOutOrder(data) {
+  return request({
+    url: '/deliverWarehouse/add.do',
+    method: 'post',
+    data,
+    headers:{
+      "Content-Type": "application/json;charset=UTF-8"
+    }
+  })
+}
+export function outOrderDetail(params) {
+  return request({
+    url: '/deliverWarehouse/detail.do',
+    method: 'get',
+    params,
+  })
+}
+export function exportData(data) {
+  return request({
+    url: '/deliverWarehouse/exportData.do',
+    method: 'post',
+    data,
+  })
+}
+// 根据装备名字查型号
+export function getEquipmentModel(data) {
+  return request({
+    url: '/deliverWarehouse/detailByName.do',
+    method: 'post',
+    data,
+  })
+}
+//根据型号查批次
+export function getEquipmentDate(data) {
+  return request({
+    url: '/deliverWarehouse/detailByModel.do',
+    method: 'post',
+    data,
+  })
+}
+
+// 库存接口
+export function getStockList(data) {
+  return request({
+    url: '/stock/toList.do',
+    method: 'post',
+    data,
+  })
+}
+export function getEquipmentStock(params) {
+  return request({
+    url: '/stock/detail.do',
+    method: 'get',
+    params,
+  })
+}
+export function getOverCount(params) {
+  return request({
+    url: '/stock/carryOverCount.do',
+    method: 'get',
+    params,
+  })
+}
+export function saveOverCount(params) {
+  return request({
+    url: '/stock/carryOver.do',
+    method: 'get',
+    params,
+  })
+}
+// 装备统计
+export function stockCount(data) {
+  return request({
+    url: '/stock/stockCount.do',
+    method: 'post',
+    data,
+  })
+}
+
+export function exportStock(data) {
+  return request({
+    url: '/stock/exportStock.do',
+    method: 'get',
+    responseType: 'blob',
+    params: data,
+  })
+}

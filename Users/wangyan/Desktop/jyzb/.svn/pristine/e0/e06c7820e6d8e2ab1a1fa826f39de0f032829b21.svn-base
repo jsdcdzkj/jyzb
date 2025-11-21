@@ -1,0 +1,824 @@
+package com.jsdc.rfid.service.warehouse.impl;
+
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.ObjectUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.google.api.client.util.Lists;
+import com.jsdc.rfid.common.G;
+import com.jsdc.rfid.dto.WarehousingStockDto;
+import com.jsdc.rfid.enums.DataType;
+import com.jsdc.rfid.enums.EquipStatusEnums;
+import com.jsdc.rfid.mapper.warehouse.*;
+import com.jsdc.rfid.model.*;
+import com.jsdc.rfid.model.warehouse.*;
+import com.jsdc.rfid.service.FileManageService;
+import com.jsdc.rfid.service.SysDepartmentService;
+import com.jsdc.rfid.service.SysUserService;
+import com.jsdc.rfid.service.warehouse.*;
+import com.jsdc.rfid.utils.CommonDataTools;
+import com.jsdc.rfid.vo.CarryOverVo;
+import com.jsdc.rfid.vo.WarehouseStockDetailVo;
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
+import javax.annotation.Resource;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+@AllArgsConstructor
+public class WarehouseStockServiceImpl extends ServiceImpl<WarehouseStockMapper, WarehousingStock> implements WarehouseStockService {
+
+    private final WarehouseStockMapper warehouseStockMapper;
+
+    private final WarehouseStockDetailMapper warehouseStockDetailMapper;
+
+    private final CommonDataTools commonDataTools;
+
+    private final SysUserService sysUserService;
+
+    @Autowired
+    private FileManageService fileManageService;
+
+    //private final WarehouseStockDetailService warehouseStockDetailService;
+    @Resource
+    private WarehouseStockDetailService warehouseStockDetailService;
+
+    private final StatisticsWarehouseMapper statisticsWarehouseMapper;
+
+    private final WarehouseStockCarryOverService warehouseStockCarryOverService;
+
+    private final WarehouseStockCarryOverMapper warehouseStockCarryOverMapper;
+
+    private final SysDepartmentService sysDepartmentService;
+
+    private final BorrowWarehousingService borrowWarehousingService;
+
+    private final BorrowWarehousingServiceImpl borrowWarehousingServiceImpl;
+
+    private final BorrowDetailWarehousingService borrowDetailWarehousingService;
+
+    private final BorrowDetailWarehousingMapper borrowDetailWarehousingMapper;
+
+    @Override
+    public PageInfo<WarehousingStock> pageQuery(Integer pageIndex, Integer pageSize, WarehousingStockDto warehousingStockDto) {
+
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+
+        PageHelper.startPage(pageIndex, pageSize);
+        List<WarehousingStock> pageList = warehouseStockMapper.equipStock(warehousingStockDto);
+
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        Map<Integer, Warehouse> warehouseMap = commonDataTools.getWarehouseMap();
+        Map<Integer, SysDepartment> deptMap = commonDataTools.getDeptMap();
+        //库存
+        pageList.stream().map(w -> {
+//            if(w.getEquip_status().equals(0)){
+//                w.setHomeObjectDesc(warehouseMap.get(w.getWarehouse_id())!=null?warehouseMap.get(w.getWarehouse_id()).getWarehouse_name():"");
+//            }else{
+//                w.setHomeObjectDesc(deptMap.get(w.getUse_dept())!=null?deptMap.get(w.getUse_dept()).getDept_name():"");
+//            }
+            if (ObjectUtil.isNotNull(w.getWarehouse_id())) {
+                w.setHomeObjectDesc(warehouseMap.get(w.getWarehouse_id()) != null ? warehouseMap.get(w.getWarehouse_id()).getWarehouse_name() : "");
+            } else {
+                w.setHomeObjectDesc(deptMap.get(w.getUse_dept()) != null ? deptMap.get(w.getUse_dept()).getDept_name() : "");
+            }
+            w.setEquip_type_name(assetsMap.get(w.getEquip_type()) != null ? assetsMap.get(w.getEquip_type()).getAssets_type_name() : "");
+            w.setEquip_name_desc(assetsMap.get(w.getEquip_name()) != null ? assetsMap.get(w.getEquip_name()).getAssets_type_name() : "");
+            w.setEquip_num(w.getEquip_in_num() - w.getEquip_out_num());
+            //计算价值
+            warehousingStockDto.setEquip_type(w.getEquip_type());
+            warehousingStockDto.setEquip_name(w.getEquip_name());
+            warehousingStockDto.setEquip_model(w.getEquip_model());
+            //warehousingStockDto.setEquip_status(w.getEquip_status());
+            List<WarehousingStockDetail> stockDetails = warehouseStockDetailMapper.stockList(warehousingStockDto);
+            w.setTotalPrice(stockDetails.stream()
+                    .map(s -> s.getUnit_price().multiply(new BigDecimal(s.getEquip_in_num() - s.getEquip_out_num())))
+                    .reduce(BigDecimal::add)
+                    .orElse(BigDecimal.ZERO));  // 如果没有值，则使用 BigDecimal.ZERO 作为默认值
+
+            //查询最新的入库时间
+            warehousingStockDto.setStock_type(0);
+            List<WarehousingStockDetail> latestStock = warehouseStockDetailMapper.queryLatest(warehousingStockDto);
+            if (!CollectionUtils.isEmpty(latestStock)) {
+                w.setEnter_time(latestStock.get(0).getAccount_time());
+                w.setEnter_time_format(latestStock.get(0).getAccount_time());
+                //w.setCreate_time(latestStock.get(0).getCreate_time());
+            }
+            return w;
+        }).collect(Collectors.toList());
+        return new PageInfo<>(pageList);
+    }
+
+    public PageInfo<WarehousingStock> pageQueryAll(Integer pageIndex, Integer pageSize, WarehousingStockDto warehousingStockDto) {
+
+        PageHelper.startPage(pageIndex, pageSize);
+        List<WarehousingStock> pageList = warehouseStockMapper.equipStockAll(warehousingStockDto);
+
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        Map<Integer, Warehouse> warehouseMap = commonDataTools.getWarehouseMap();
+        Map<Integer, SysDepartment> deptMap = commonDataTools.getDeptMap();
+        //库存
+        pageList.stream().map(w -> {
+
+            w.setHomeObjectDesc(deptMap.get(w.getUse_dept()) != null ? deptMap.get(w.getUse_dept()).getDept_name() : "");
+
+            w.setEquip_type_name(assetsMap.get(w.getEquip_type()) != null ? assetsMap.get(w.getEquip_type()).getAssets_type_name() : "");
+            w.setEquip_name_desc(assetsMap.get(w.getEquip_name()) != null ? assetsMap.get(w.getEquip_name()).getAssets_type_name() : "");
+            w.setEquip_num(w.getEquip_in_num() - w.getEquip_out_num());
+            //计算价值
+            warehousingStockDto.setEquip_type(w.getEquip_type());
+            warehousingStockDto.setEquip_name(w.getEquip_name());
+            warehousingStockDto.setEquip_model(w.getEquip_model());
+            //warehousingStockDto.setEquip_status(w.getEquip_status());
+            List<WarehousingStockDetail> stockDetails = warehouseStockDetailMapper.stockList(warehousingStockDto);
+            w.setTotalPrice(stockDetails.stream()
+                    .map(s -> s.getUnit_price().multiply(new BigDecimal(s.getEquip_in_num() - s.getEquip_out_num())))
+                    .reduce(BigDecimal::add)
+                    .orElse(BigDecimal.ZERO));  // 如果没有值，则使用 BigDecimal.ZERO 作为默认值
+
+            //查询最新的入库时间
+            warehousingStockDto.setStock_type(0);
+            List<WarehousingStockDetail> latestStock = warehouseStockDetailMapper.queryLatest(warehousingStockDto);
+            if (!CollectionUtils.isEmpty(latestStock)) {
+                w.setEnter_time(latestStock.get(0).getAccount_time());
+                w.setEnter_time_format(latestStock.get(0).getAccount_time());
+                //w.setCreate_time(latestStock.get(0).getCreate_time());
+            }
+            return w;
+        }).collect(Collectors.toList());
+        return new PageInfo<>(pageList);
+    }
+
+    public Map<String, Object> equipStockWarehouse(Integer id, Integer warehouse_id) {
+        WarehousingBorrow warehousingBorrow = borrowWarehousingServiceImpl.getById(id);
+        if (null != warehouse_id) {
+            warehousingBorrow.setWarehouse_id(warehouse_id);
+        }
+        List<WarehousingBorrow> warehousingBorrowList = warehouseStockMapper.equipStockWarehouse(warehousingBorrow);
+        Map<String, Object> map = new HashMap<>();
+        List<Warehouse> warehouseList = new ArrayList<>();
+        for (WarehousingBorrow wb : warehousingBorrowList) {
+            Warehouse warehouse = new Warehouse();
+            warehouse.setId(wb.getWarehouse_id());
+            warehouse.setWarehouse_name(wb.getWarehouse_name());
+            warehouseList.add(warehouse);
+        }
+        map.put("warehouse", warehouseList);
+        map.put("list", warehousingBorrowList);
+        return map;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void apply(WarehousingBorrow bean) {
+        Integer year = DateUtil.year(bean.getDelivery_time());
+        Integer month = DateUtil.month(bean.getDelivery_time()) + 1;
+        //出库时间校验
+        WarehousingStockDto warehousingStockDto = new WarehousingStockDto();
+        warehousingStockDto.setYear(year);
+        warehousingStockDto.setMonth(month);
+        List<String> deptIds = sysDepartmentService.getFjDept(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(deptIds)) {
+            deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        }
+        warehousingStockDto.setDeptIds(deptIds);
+
+        //库存校验
+//        warehousingStockDto.setEquip_status(bean.getEquip_status());
+//        warehousingStockDto.setWarehouse_id(bean.getWarehouse_id());
+//        warehousingStockDto.setUse_dept(bean.getUse_dept());
+//        deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+//        warehousingStockDto.setDeptIds(deptIds);
+//        if (!CollectionUtils.isEmpty(bean.getBorrowDetails())) {
+//            bean.getBorrowDetails().forEach(d -> {
+//                warehousingStockDto.setEquip_type(d.getEquip_type());
+//                warehousingStockDto.setEquip_name(d.getEquip_name());
+//                warehousingStockDto.setEquip_model(d.getEquip_model());
+//                warehousingStockDto.setProduceDate(DateUtil.formatDateTime(d.getProduce_date()));
+//                List<WarehousingStockDetail> stockDetails = warehouseStockDetailMapper.equipList(warehousingStockDto);
+//                int inNum = stockDetails.stream().collect(Collectors.summingInt(WarehousingStockDetail::getEquip_in_num));
+//                int outNum = stockDetails.stream().collect(Collectors.summingInt(WarehousingStockDetail::getEquip_out_num));
+//                if (d.getDelivery_num() > (inNum - outNum)) {
+//                    throw new RuntimeException("借用数量大于库存！！");
+//                }
+//
+//            });
+//        }
+
+        //生成出库库单号
+        bean.setDelivery_no(commonDataTools.getNo(DataType.DELIVER_NUMBER.getType(), null));
+        bean.setIs_del(String.valueOf(0));
+        bean.setCreate_time(new Date());
+        bean.setCreate_user(sysUserService.getUser().getId());
+        bean.setDept_id(sysUserService.getUser().getDepartment());
+        borrowWarehousingServiceImpl.save(bean);//保存主表
+        borrowWarehousingService.deliveryStock(bean);
+
+    }
+
+    @Override
+    public PageInfo<WarehousingBorrow> applyPageQuery(Integer pageIndex, Integer pageSize, WarehousingBorrow warehousingDelivery) {
+        QueryWrapper<WarehousingBorrow> queryWrapper = new QueryWrapper<>();
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingDelivery.getDelivery_no())) {
+            queryWrapper.like("delivery_no", warehousingDelivery.getDelivery_no());
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingDelivery.getDelivery_start_time())) {
+            queryWrapper.ge("delivery_time", warehousingDelivery.getDelivery_start_time());
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingDelivery.getDelivery_end_time())) {
+            queryWrapper.le("delivery_time", warehousingDelivery.getDelivery_end_time());
+        }
+        if (null != warehousingDelivery.getCreate_user()) {
+            queryWrapper.eq("create_user", warehousingDelivery.getCreate_user());
+        }
+        if (null != warehousingDelivery.getUse_dept()) {
+            queryWrapper.eq("use_dept", warehousingDelivery.getUse_dept());
+        }
+        if (null != warehousingDelivery.getDept_id()) {
+            queryWrapper.eq("dept_id", warehousingDelivery.getDept_id());
+        }
+        if (null != warehousingDelivery.getStatus()) {
+            queryWrapper.eq("status", warehousingDelivery.getStatus());
+        }
+        if (null != warehousingDelivery.getEquip_model()) {
+            queryWrapper.eq("equip_model", warehousingDelivery.getEquip_model());
+        }
+        if (null != warehousingDelivery.getEquip_type()) {
+            queryWrapper.eq("equip_type", warehousingDelivery.getEquip_type());
+        }
+        if (null != warehousingDelivery.getEquip_name()) {
+            queryWrapper.eq("equip_name", warehousingDelivery.getEquip_name());
+        }
+
+        queryWrapper.eq("is_del", "0");
+
+        PageHelper.startPage(pageIndex, pageSize, "create_time desc");
+        List<WarehousingBorrow> pageList = borrowWarehousingServiceImpl.list(queryWrapper);
+
+        Map<Integer, Warehouse> warehouseMap = commonDataTools.getWarehouseMap();
+        Map<Integer, SysDepartment> deptMap = commonDataTools.getDeptMap();
+        Map<Integer, SysUser> userMap = commonDataTools.getUserAllMap();
+        Map<Integer, SysDict> dictMap = commonDataTools.getSysDictMap("unit");
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+
+        pageList.stream().map(d -> {
+            if (d.getWarehouse_id() != null) {
+                d.setWarehouse_name(warehouseMap.get(d.getWarehouse_id()) != null ? warehouseMap.get(d.getWarehouse_id()).getWarehouse_name() : "");
+            }
+            if (d.getUse_dept() != null) {
+                d.setUse_dept_name(deptMap.get(d.getUse_dept()) != null ? deptMap.get(d.getUse_dept()).getDept_name() : "");
+            }
+            if (d.getDept_id() != null) {
+                d.setDept_id_name(deptMap.get(d.getDept_id()) != null ? deptMap.get(d.getDept_id()).getDept_name() : "");
+            }
+            if (d.getCreate_user() != null) {
+                d.setCreate_user_name(userMap.get(d.getCreate_user()) != null ? userMap.get(d.getCreate_user()).getUser_name() : "");
+            }
+            d.setEquip_type_name(assetsMap.get(d.getEquip_type()) != null ? assetsMap.get(d.getEquip_type()).getAssets_type_name() : "");
+            d.setEquip_name_desc(assetsMap.get(d.getEquip_name()) != null ? assetsMap.get(d.getEquip_name()).getAssets_type_name() : "");
+            d.setAssets_type_code(assetsMap.get(d.getEquip_name()) != null ? assetsMap.get(d.getEquip_name()).getAssets_type_code() : "");
+            return d;
+        }).collect(Collectors.toList());
+
+        return new PageInfo<>(pageList);
+    }
+
+    @Override
+    public WarehousingBorrow applyLendDetail(Integer id) {
+        WarehousingBorrow warehousingDelivery = borrowWarehousingServiceImpl.getById(id);
+        if (null != warehousingDelivery.getFileId()) {
+            FileManage fileManage = fileManageService.selectById(warehousingDelivery.getFileId());
+            warehousingDelivery.setFileName(fileManage.getStore_name());
+        }
+
+        Map<Integer, Warehouse> warehouseMap = commonDataTools.getWarehouseMap();
+        Map<Integer, SysDict> dictMap = commonDataTools.getSysDictMap("unit");
+        //Map<String, AssetsType> assetsMap = commonDataTools.getAssetsTypeCodeMap();
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        Map<Integer, SysDepartment> deptMap = commonDataTools.getDeptMap();
+
+        warehousingDelivery.setEquip_status_desc(EquipStatusEnums.getDesc(warehousingDelivery.getEquip_status()));
+        if (warehousingDelivery.getWarehouse_id() != null) {
+            warehousingDelivery.setWarehouse_name(warehouseMap.get(warehousingDelivery.getWarehouse_id()) != null ? warehouseMap.get(warehousingDelivery.getWarehouse_id()).getWarehouse_name() : "");
+        }
+        if (warehousingDelivery.getUse_dept() != null) {
+            warehousingDelivery.setUse_dept_name(deptMap.get(warehousingDelivery.getUse_dept()) != null ? deptMap.get(warehousingDelivery.getUse_dept()).getDept_name() : "");
+        }
+
+        warehousingDelivery.setEquip_type_name(assetsMap.get(warehousingDelivery.getEquip_type()) != null ? assetsMap.get(warehousingDelivery.getEquip_type()).getAssets_type_name() : "");
+        warehousingDelivery.setEquip_name_desc(assetsMap.get(warehousingDelivery.getEquip_name()) != null ? assetsMap.get(warehousingDelivery.getEquip_name()).getAssets_type_name() : "");
+        warehousingDelivery.setAssets_type_code(assetsMap.get(warehousingDelivery.getEquip_name()) != null ? assetsMap.get(warehousingDelivery.getEquip_name()).getAssets_type_code() : "");
+
+        QueryWrapper<WarehousingBorrowDetail> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("warehousing_borrow_id",id);
+        List<WarehousingBorrowDetail> borrowDetails = borrowDetailWarehousingMapper.selectList(queryWrapper);
+        for (WarehousingBorrowDetail detail : borrowDetails) {
+            detail.setWarehouse_name(warehouseMap.get(detail.getWarehouse_id()) != null ? warehouseMap.get(detail.getWarehouse_id()).getWarehouse_name() : "");
+        }
+        warehousingDelivery.setBorrowDetails(borrowDetails);
+
+        return warehousingDelivery;
+    }
+
+    @Override
+    public WarehousingBorrow applyDel(Integer id) {
+        WarehousingBorrow warehousingDelivery = borrowWarehousingServiceImpl.getById(id);
+        warehousingDelivery.setIs_del(G.ISDEL_YES);
+        warehousingDelivery.updateById();
+        return warehousingDelivery;
+    }
+
+
+    @Override
+    public void enterStock(WarehousingEnter warehousingEnter) {
+        List<WarehousingEnterDetail> equipList = warehousingEnter.getEnterDetails();
+        Map<String, List<WarehousingEnterDetail>> equipMap = equipList.stream().collect(Collectors.groupingBy(e -> {
+            StringBuilder groupKey = new StringBuilder();
+            //groupKey.append(e.getEquip_type()).append("#").append(e.getEquip_model()).append("#").append(e.getEquip_status());
+            groupKey.append(e.getEquip_type()).append("#").append(e.getEquip_name()).append("#").append(e.getEquip_model());
+            return groupKey.toString();
+        }));
+        //todo 加入锁机制
+        equipMap.forEach((equip, elist) -> {
+            String[] equips = equip.split("#");
+            QueryWrapper<WarehousingStock> queryWrapper = new QueryWrapper<>();
+            //queryWrapper.eq("warehouse_id",warehousingEnter.getWarehouse_id());
+            queryWrapper.eq("equip_type", equips[0]);
+            queryWrapper.eq("equip_name", equips[1]);
+            queryWrapper.eq("equip_model", equips[2]);
+            //queryWrapper.eq("equip_status",equips[3]);
+            List<WarehousingStock> stockEquip = warehouseStockMapper.selectList(queryWrapper);
+            WarehousingStock warehousingStock = new WarehousingStock();
+            if (!CollectionUtils.isEmpty(stockEquip))
+                warehousingStock = stockEquip.get(0);
+            if (ObjectUtil.isNull(warehousingStock.getId())) {
+                //warehousingStock.setWarehouse_id(warehousingEnter.getWarehouse_id());
+                warehousingStock.setEquip_type(Integer.valueOf(equips[0]));
+                warehousingStock.setEquip_name(Integer.valueOf(equips[1]));
+                warehousingStock.setEquip_model(equips[2]);
+                //warehousingStock.setEnter_date(warehousingEnter.getEnter_time());
+                warehousingStock.setIs_del(String.valueOf(0));
+                warehousingStock.setCreate_time(new Date());
+                warehousingStock.setCreate_user(sysUserService.getUser().getId());
+                warehouseStockMapper.insert(warehousingStock);
+            } else {
+                //更新入库时间
+                //warehousingStock.setEnter_date(warehousingEnter.getEnter_time());
+                //warehouseStockMapper.updateById(warehousingStock);
+            }
+            //新增库存明细
+            List<WarehousingStockDetail> stockDetails = new ArrayList<>();
+            for (WarehousingEnterDetail e : elist) {
+                WarehousingStockDetail detail = new WarehousingStockDetail();
+                BeanUtil.copyProperties(e, detail);
+                detail.setStock_id(warehousingStock.getId());
+                detail.setEquip_in_num(e.getEquip_num());
+                //detail.setSupplier_id(warehousingEnter.getSupplier_id());
+                detail.setStock_type(0);
+                if (warehousingEnter.getDept_id() != null) {
+                    detail.setDept_id(warehousingEnter.getDept_id());
+                } else {
+                    detail.setDept_id(sysUserService.getUser().getDepartment());
+                }
+                detail.setIs_del(String.valueOf(0));
+                detail.setCreate_time(new Date());
+                detail.setCreate_user(sysUserService.getUser().getId());
+                //设置使用部门
+                if (e.getUse_dept() != null) {
+                    detail.setDept_id(e.getUse_dept());
+                }
+                detail.setAccount_time(warehousingEnter.getEnter_time());
+                //detail.setEnter_time(warehousingEnter.getEnter_time());
+                //过期时间
+                detail.setExpired_date(DateUtil.offset(detail.getProduce_date(), DateField.MONTH, detail.getUse_year()));
+                //临期
+                detail.setCritical_date(DateUtil.offset(detail.getExpired_date(), DateField.MONTH, -6));
+                stockDetails.add(detail);
+            }
+            warehouseStockDetailService.batchSave(stockDetails);
+        });
+    }
+
+    @Override
+    public void deliveryStock(WarehousingDelivery warehousingDelivery) {
+        //todo 加入锁机制
+        List<WarehousingDeliveryDetail> deliveryList = warehousingDelivery.getDeliveryDetails();
+        List<WarehousingStockDetail> stockList = new ArrayList<>();
+        WarehousingStockDto warehousingStockDto = new WarehousingStockDto();
+        warehousingStockDto.setEquip_status(warehousingDelivery.getEquip_status());
+        warehousingStockDto.setWarehouse_id(warehousingDelivery.getWarehouse_id());
+        warehousingStockDto.setUse_dept(warehousingDelivery.getUse_dept());
+        for (WarehousingDeliveryDetail delivery : deliveryList) {
+            switch (warehousingDelivery.getDelivery_type()) {
+                case 1:
+                    ;//调拨
+                case 2:
+                    //先生成逻辑出库记录
+                    //WarehousingStockDetail stockDetail = buildStockDetail(delivery,warehousingDelivery);
+                    List<WarehousingStockDetail> stockDetails = buildStockDetail(delivery, warehousingDelivery, warehousingStockDto);
+                    stockList.addAll(stockDetails);
+                    //未真正出库，需把库存再还回去，再生成逻辑入库记录
+                    stockDetails.forEach(s -> {
+                        WarehousingStockDetail stockDetail1 = new WarehousingStockDetail();
+                        BeanUtil.copyProperties(s, stockDetail1);
+                        stockDetail1.setEquip_out_num(0);
+                        stockDetail1.setEquip_in_num(s.getEquip_out_num());
+                        stockDetail1.setStock_type(0);
+                        stockDetail1.setEquip_status(1);
+                        if (delivery.getUse_dept() != null) {
+                            stockDetail1.setDept_id(delivery.getUse_dept());
+                            stockDetail1.setUse_dept(delivery.getUse_dept());
+                        }
+                        stockDetail1.setWarehouse_id(null);
+                        stockList.add(stockDetail1);
+                    });
+                    break;//借用
+                case 3:
+                    List<WarehousingStockDetail> stockDetails2 = buildStockDetail(delivery, warehousingDelivery, warehousingStockDto);
+                    stockList.addAll(stockDetails2);
+                    break;//处置
+            }
+        }
+        warehouseStockDetailService.batchSave(stockList);
+    }
+
+    @Override
+    public JSONArray equipList(WarehousingStockDto warehousingStockDto) {
+        //Map<Integer, Supplier> supplierMap = commonDataTools.getSupplierMap();
+        //Map<Integer, SysDict> dictMap = commonDataTools.getSysDictMap("unit");
+        //Map<String, AssetsType> assetsMap = commonDataTools.getAssetsTypeCodeMap();
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        List<WarehousingStockDetail> list = warehouseStockDetailMapper.equipList(warehousingStockDto);
+        JSONArray resultArray = new JSONArray();
+        if (!CollectionUtils.isEmpty(list)) {
+            Map<Integer, List<WarehousingStockDetail>> equipTypeMap = list.stream().collect(Collectors.groupingBy(WarehousingStockDetail::getEquip_type));
+            equipTypeMap.forEach((type, stockList) -> {
+                JSONObject typeObj = new JSONObject();
+                typeObj.put("name", "equipType");
+                typeObj.put("label", assetsMap.get(type) != null ? assetsMap.get(type).getAssets_type_name() : "");
+                typeObj.put("value", type);
+                typeObj.put("child", findChild(stockList, typeObj, assetsMap));
+                resultArray.add(typeObj);
+            });
+        }
+        return resultArray;
+    }
+
+    @Override
+    public WarehouseStockDetailVo detail(WarehousingStockDto warehousingStockDto) {
+        WarehouseStockDetailVo warehouseStockDetailVo = new WarehouseStockDetailVo();
+        warehouseStockDetailVo.setStaticsTime(warehousingStockDto.getStaticsTime());
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        //总数统计
+        List<WarehousingStockDetail> details = warehouseStockDetailMapper.detailList(warehousingStockDto);
+        warehouseStockDetailVo.setEquipNum(0);
+        warehouseStockDetailVo.setTotalPrice(BigDecimal.ZERO);
+        Set<Integer> warehouse = new HashSet<>();
+        Set<Integer> useDept = new HashSet<>();
+        details.stream().filter(d -> d.getEquip_status().equals(0)).forEach(d -> {
+            warehouse.add(d.getWarehouse_id());
+        });
+        details.stream().filter(d -> d.getEquip_status().equals(1)).forEach(d -> {
+            useDept.add(d.getDept_id());
+        });
+        warehouseStockDetailVo.setWarehouseNum(warehouse.size());
+        warehouseStockDetailVo.setDeptNum(useDept.size());
+        //库存明细
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        Map<Integer, Warehouse> warehouseMap = commonDataTools.getWarehouseMap();
+        Map<Integer, SysDepartment> deptMap = commonDataTools.getDeptMap();
+        List<WarehousingStockDetail> stockDetails = new ArrayList<>();
+        Map<String, List<WarehousingStockDetail>> detailsMap = details.stream().collect(Collectors.groupingBy(d -> {
+            StringBuilder groupKey = new StringBuilder();
+            groupKey.append(d.getEquip_status()).append("#").append(d.getHomeObject()).append("#").append(d.getUnit_price());
+            return groupKey.toString();
+        }));
+        detailsMap.forEach((key, sDetails) -> {
+            sDetails.forEach(s -> {
+                s.setEquip_num(s.getEquip_in_num() - s.getEquip_out_num());
+                s.setPrice(s.getUnit_price().multiply(new BigDecimal(s.getEquip_num())));
+                s.setEquip_type_name(assetsMap.get(s.getEquip_type()) != null ? assetsMap.get(s.getEquip_type()).getAssets_type_name() : "");
+                s.setEquip_name_desc(assetsMap.get(s.getEquip_name()) != null ? assetsMap.get(s.getEquip_name()).getAssets_type_name() : "");
+                s.setAssets_type_code(assetsMap.get(s.getEquip_name()) != null ? assetsMap.get(s.getEquip_name()).getAssets_type_code() : "");
+                if (s.getEquip_status().equals(0)) {
+                    s.setHomeObjectDesc(warehouseMap.get(s.getWarehouse_id()) != null ? warehouseMap.get(s.getWarehouse_id()).getWarehouse_name() : "");
+                } else {
+                    s.setHomeObjectDesc(deptMap.get(s.getDept_id()) != null ? deptMap.get(s.getDept_id()).getDept_name() : "");
+                }
+            });
+            int eqNum = sDetails.stream().collect(Collectors.summingInt(WarehousingStockDetail::getEquip_num));
+            BigDecimal price = sDetails.stream().map(s -> s.getPrice()).reduce(BigDecimal::add).get();
+            warehouseStockDetailVo.setEquipNum(warehouseStockDetailVo.getEquipNum() + eqNum);
+            warehouseStockDetailVo.setTotalPrice(warehouseStockDetailVo.getTotalPrice().add(price));
+            stockDetails.addAll(sDetails);
+        });
+        warehouseStockDetailVo.setStockDetails(stockDetails);
+        if (StringUtils.isEmpty(warehouseStockDetailVo.getStaticsTime()))
+            warehouseStockDetailVo.setStaticsTime(DateUtil.today());
+        return warehouseStockDetailVo;
+    }
+
+    @Override
+    public PageInfo<WarehousingStock> stockCount(Integer pageIndex, Integer pageSize, WarehousingStockDto warehousingStockDto) {
+        Map<Integer, AssetsType> assetsMap = commonDataTools.getAssetsTypeMap();
+        Map<Integer, SysDepartment> deptMap = commonDataTools.getDeptMap();
+        //转换装备类型id
+        if (!StringUtils.isEmpty(warehousingStockDto.getType())) {
+            List<String> typeIds = commonDataTools.getAssetsTypeIds(warehousingStockDto.getType());
+            warehousingStockDto.setTypeIds(typeIds);
+        }
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        PageHelper.startPage(pageIndex, pageSize);
+        List<WarehousingStock> pageList = warehouseStockMapper.stockCount(warehousingStockDto);
+        pageList.stream().map(w -> {
+            w.setEquip_type_name(assetsMap.get(w.getEquip_type()) != null ? assetsMap.get(w.getEquip_type()).getAssets_type_name() : "");
+            w.setEquip_name_desc(assetsMap.get(w.getEquip_name()) != null ? assetsMap.get(w.getEquip_name()).getAssets_type_name() : "");
+            w.setAssets_type_code(assetsMap.get(w.getEquip_name()) != null ? assetsMap.get(w.getEquip_name()).getAssets_type_code() : "");
+//            w.setDept_name(deptMap.get(w.getDept_id())!=null?deptMap.get(w.getDept_id()).getDept_name():"");
+            //统计
+            return w;
+        }).collect(Collectors.toList());
+        return new PageInfo<>(pageList);
+    }
+
+    @Override
+    public CarryOverVo carryOverCount(WarehousingStockDto warehousingStockDto) {
+        CarryOverVo carryOverVo = new CarryOverVo();
+        //校验所选年月是否已结转
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        //warehousingStockDto.setEquip_status(0);
+
+        if (!StringUtils.isEmpty(warehousingStockDto.getYearMonth())) {
+            String[] time = warehousingStockDto.getYearMonth().split("-");
+            warehousingStockDto.setYear(Integer.parseInt(time[0]));
+            warehousingStockDto.setMonth(Integer.parseInt(time[1]));
+        }
+
+        List<WarehousingStockCarryOver> carryOvers = warehouseStockCarryOverMapper.carryOverList(warehousingStockDto);
+        // 获取当前年份和月份
+        int currentYear = DateUtil.year(DateUtil.date());
+        int currentMonth = DateUtil.month(DateUtil.date()) + 1;  // DateUtil.month() 返回0~11，因此加1
+
+        // 获取结转数据的年份和月份
+        String[] yearMonthStr = warehousingStockDto.getYearMonth().split("-");
+        int futureYear = Integer.parseInt(yearMonthStr[0]);
+        int futureMonth = Integer.parseInt(yearMonthStr[1]);
+
+        // 如果年份大于当前年份或年份相同且月份大于等于当前月份，则视为当前及未来月份
+        boolean isFutureOrCurrentMonth = futureYear > currentYear ||
+                (futureYear == currentYear && futureMonth >= currentMonth);
+
+        // 判断是否有结转记录或日期是当前或未来月份
+        if (!CollectionUtils.isEmpty(carryOvers) || isFutureOrCurrentMonth) {
+            carryOverVo.setStatus(1);  // 设置为不可结算状态
+        }
+
+
+        // 解析字符串为 YearMonth 对象
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+        YearMonth yearMonth = YearMonth.parse(warehousingStockDto.getYearMonth(), formatter);
+        // 获取当月的最后一天
+        LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
+        warehousingStockDto.setStaticsTime(lastDayOfMonth + "");
+
+        //装备总数统计
+        List<WarehousingStockDetail> stockTypeLists = warehouseStockDetailMapper.stockTypeNum(warehousingStockDto);
+        if (!CollectionUtils.isEmpty(stockTypeLists)) {
+            int inNum = stockTypeLists.stream().map(s -> s.getEquip_in_num()).reduce(Integer::sum).get();
+            int outNum = stockTypeLists.stream().map(s -> s.getEquip_out_num()).reduce(Integer::sum).get();
+            carryOverVo.setEquipNum(inNum - outNum);
+        }
+        warehousingStockDto.setStaticsFromTime(warehousingStockDto.getYearMonth() + "-" + "01");
+
+        List<WarehousingStockDetail> stockTypeLists1 = warehouseStockDetailMapper.stockTypeNum(warehousingStockDto);
+        if (!CollectionUtils.isEmpty(stockTypeLists1)) {
+            int inNum = stockTypeLists1.stream().map(s -> s.getEquip_in_num()).reduce(Integer::sum).get();
+            List<WarehousingStockDetail> vInList = stockTypeLists1.stream().filter(s -> s.getStock_type().equals(1) || s.getStock_type().equals(2)).collect(Collectors.toList());
+            //虚拟入库量
+            int vInNum = CollectionUtils.isEmpty(vInList) ? 0 : vInList.stream().map(s -> s.getEquip_out_num()).reduce(Integer::sum).get();
+            carryOverVo.setEquipInNum(inNum - vInNum);
+            List<WarehousingStockDetail> outList = stockTypeLists1.stream().filter(s -> !s.getStock_type().equals(0)).collect(Collectors.toList());
+            int outNum = CollectionUtils.isEmpty(outList) ? 0 : outList.stream().map(s -> s.getEquip_out_num()).reduce(Integer::sum).get();
+            carryOverVo.setEquipOutNum(outNum);
+        }
+        return carryOverVo;
+    }
+
+    @Override
+    public void carryOver(WarehousingStockDto warehousingStockDto) {
+        //校验所选年月是否已结转
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+
+        if (!StringUtils.isEmpty(warehousingStockDto.getYearMonth())) {
+            String[] time = warehousingStockDto.getYearMonth().split("-");
+            warehousingStockDto.setYear(Integer.parseInt(time[0]));
+            warehousingStockDto.setMonth(Integer.parseInt(time[1]));
+        }
+
+        List<WarehousingStockCarryOver> carryOvers = warehouseStockCarryOverMapper.carryOverList(warehousingStockDto);
+        if (!CollectionUtils.isEmpty(carryOvers)) {
+            throw new RuntimeException("当月结转数据已生成!");
+        }
+        List<WarehousingStockCarryOver> carryOverList = new ArrayList<>();
+        // 解析字符串为 YearMonth 对象
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+        YearMonth yearMonth = YearMonth.parse(warehousingStockDto.getYearMonth(), formatter);
+        // 获取当月的最后一天
+        LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
+        warehousingStockDto.setStaticsTime(lastDayOfMonth + "");
+        //warehousingStockDto.setStaticsTime(DateUtil.formatDateTime(DateUtil.endOfMonth(today)));
+        //库存与在用统计
+        List<WarehousingStockDetail> stockList = statisticsWarehouseMapper.equipDeptStatistics(warehousingStockDto);
+        Optional.ofNullable(stockList).orElse(Lists.newArrayList()).stream().forEach(s -> {
+            WarehousingStockCarryOver carryOver = new WarehousingStockCarryOver();
+            carryOver.setEquip_status(s.getEquip_status());
+            carryOver.setEquip_type(s.getEquip_type());
+            carryOver.setEquip_num(s.getEquip_in_num() - s.getEquip_out_num());
+            carryOver.setDept_id(s.getDept_id());
+            carryOver.setYear(warehousingStockDto.getYear());
+            carryOver.setMonth(warehousingStockDto.getMonth());
+            carryOver.setIs_del(String.valueOf(0));
+            carryOver.setCreate_time(new Date());
+            carryOver.setCreate_user(sysUserService.getUser().getId());
+            carryOverList.add(carryOver);
+        });
+        //当月处置数统计
+        warehousingStockDto.setStaticsFromTime(warehousingStockDto.getYearMonth() + "-" + "01");
+
+        warehousingStockDto.setStock_type(3);
+        List<WarehousingStockDetail> disposalList = warehouseStockDetailMapper.disposalCount(warehousingStockDto);
+        Optional.ofNullable(disposalList).orElse(Lists.newArrayList()).stream().forEach(s -> {
+            WarehousingStockCarryOver carryOver = new WarehousingStockCarryOver();
+            carryOver.setEquip_status(2);
+            carryOver.setEquip_type(s.getEquip_type());
+            carryOver.setEquip_num(s.getEquip_num());
+            carryOver.setDept_id(s.getDept_id());
+            carryOver.setYear(warehousingStockDto.getYear());
+            carryOver.setMonth(warehousingStockDto.getMonth());
+            carryOver.setIs_del(String.valueOf(0));
+            carryOver.setCreate_time(new Date());
+            carryOver.setCreate_user(sysUserService.getUser().getId());
+            carryOverList.add(carryOver);
+        });
+        if (!CollectionUtils.isEmpty(carryOverList)) {
+            warehouseStockCarryOverService.batchSave(carryOverList);
+        }
+    }
+
+    public JSONArray findChild(List<WarehousingStockDetail> stockList, JSONObject obj, Map<Integer, AssetsType> assetsMap) {
+        JSONArray childArray = new JSONArray();
+        if (obj.getString("name").equals("equipType")) {
+            Map<Integer, List<WarehousingStockDetail>> equipMap = stockList.stream().collect(Collectors.groupingBy(WarehousingStockDetail::getEquip_name));
+            equipMap.forEach((name, equipList) -> {
+                JSONObject nameObj = new JSONObject();
+                nameObj.put("name", "equipName");
+                nameObj.put("value", name);
+                nameObj.put("label", assetsMap.get(name) != null ? assetsMap.get(name).getAssets_type_name() : "");
+                nameObj.put("child", findChild(equipList, nameObj, assetsMap));
+                childArray.add(nameObj);
+            });
+        }
+        if (obj.getString("name").equals("equipName")) {
+            Map<String, List<WarehousingStockDetail>> equipMap = stockList.stream().collect(Collectors.groupingBy(WarehousingStockDetail::getEquip_model));
+            equipMap.forEach((model, equipList) -> {
+                JSONObject modelObj = new JSONObject();
+                modelObj.put("name", "equipModel");
+                modelObj.put("value", model);
+                modelObj.put("label", model);
+                modelObj.put("child", findChild(equipList, modelObj, assetsMap));
+                childArray.add(modelObj);
+            });
+        }
+        if (obj.getString("name").equals("equipModel")) {
+            Map<String, List<WarehousingStockDetail>> equipMap = stockList.stream().collect(Collectors.groupingBy(WarehousingStockDetail::getProduceDate));
+            equipMap.forEach((produce, equipList) -> {
+                JSONObject produceObj = new JSONObject();
+                produceObj.put("name", "produceDate");
+                produceObj.put("value", produce);
+                produceObj.put("label", produce);
+                int inNum = equipList.stream().collect(Collectors.summingInt(WarehousingStockDetail::getEquip_in_num));
+                int outNum = equipList.stream().collect(Collectors.summingInt(WarehousingStockDetail::getEquip_out_num));
+                produceObj.put("equipNum", inNum - outNum);
+                childArray.add(produceObj);
+            });
+        }
+//        if(obj.getString("name").equals("produceDate")){
+//            stockList.forEach(s->{
+//                JSONObject unitPriceObj = new JSONObject();
+//                unitPriceObj.put("name","unitPrice");
+//                unitPriceObj.put("value",s.getUnit_price());
+//                unitPriceObj.put("label",s.getUnit_price());
+//                childArray.add(unitPriceObj);
+//            });
+//        }
+
+//        if(obj.getString("name").equals("supplier")){
+//            Map<Integer,List<WarehousingStock>> equipMap = stockList.stream().collect(Collectors.groupingBy(WarehousingStock::getEquip_unit));
+//            equipMap.forEach((unitPrice,equipList)->{
+//                JSONObject unitPriceObj = new JSONObject();
+//                unitPriceObj.put("name","unitPrice");
+//                unitPriceObj.put("value",unitPrice);
+//                unitPriceObj.put("child",findChild(equipList,unitPriceObj));
+//                childArray.add(unitPriceObj);
+//            });
+//        }
+//        if(obj.getString("name").equals("unitPrice")){
+//            Map<Integer,List<WarehousingStock>> equipMap = stockList.stream().collect(Collectors.groupingBy(WarehousingStock::getUse_year));
+//            equipMap.forEach((useYear,equipList)->{
+//                JSONObject useYearObj = new JSONObject();
+//                useYearObj.put("name","useYear");
+//                useYearObj.put("value",useYear);
+//                useYearObj.put("child",findChild(equipList,useYearObj));
+//                childArray.add(useYearObj);
+//            });
+//        }
+//        if(obj.getString("name").equals("useYear")){
+//            Map<Integer,List<WarehousingStock>> equipMap = stockList.stream().collect(Collectors.groupingBy(WarehousingStock::getEquip_type));
+//            equipMap.forEach((produce,equipList)->{
+//                JSONObject produceObj = new JSONObject();
+//                produceObj.put("name","produceDate");
+//                produceObj.put("value",produce);
+//                produceObj.put("child",equipList);
+//                childArray.add(produceObj);
+//            });
+//        }
+        return childArray;
+    }
+
+    public List<WarehousingStockDetail> buildStockDetail(WarehousingDeliveryDetail delivery, WarehousingDelivery warehousingDelivery, WarehousingStockDto warehousingStockDto) {
+        warehousingStockDto.setEquip_type(delivery.getEquip_type());
+        warehousingStockDto.setEquip_name(delivery.getEquip_name());
+        warehousingStockDto.setEquip_model(delivery.getEquip_model());
+        warehousingStockDto.setProduceDate(DateUtil.formatDateTime(delivery.getProduce_date()));
+        List<String> deptIds = sysDepartmentService.getTreeId(sysUserService.getUser().getDepartment()).stream().map(d -> d.toString()).collect(Collectors.toList());
+        warehousingStockDto.setDeptIds(deptIds);
+        List<WarehousingStockDetail> details = warehouseStockDetailMapper.detailList(warehousingStockDto);
+        Map<BigDecimal, List<WarehousingStockDetail>> detailsMap = details.stream().collect(Collectors.groupingBy(WarehousingStockDetail::getUnit_price));
+        List<WarehousingStockDetail> stockDetailList = new ArrayList<>();
+        detailsMap.forEach((unitPrice, stockDetails) -> {
+            if (delivery.getDelivery_num() == 0)
+                return;
+            WarehousingStockDetail stockDetail = new WarehousingStockDetail();
+            stockDetail.setStock_type(warehousingDelivery.getDelivery_type());
+            int inNum = stockDetails.stream().collect(Collectors.summingInt(WarehousingStockDetail::getEquip_in_num));
+            int outNum = stockDetails.stream().collect(Collectors.summingInt(WarehousingStockDetail::getEquip_out_num));
+            int stockNum = inNum - outNum;
+            if (delivery.getDelivery_num() <= stockNum) {
+                stockDetail.setEquip_out_num(delivery.getDelivery_num());
+                delivery.setDelivery_num(0);
+            } else {
+                stockDetail.setEquip_out_num(stockNum);
+                delivery.setDelivery_num(delivery.getDelivery_num() - stockNum);
+            }
+            stockDetail.setStock_id(stockDetails.get(0).getStock_id());
+            stockDetail.setDelivery_id(warehousingDelivery.getId());
+            stockDetail.setDelivery_no(warehousingDelivery.getDelivery_no());
+            stockDetail.setEquip_type(delivery.getEquip_type());
+            stockDetail.setEquip_name(delivery.getEquip_name());
+            stockDetail.setEquip_model(delivery.getEquip_model());
+            stockDetail.setEquip_unit(delivery.getEquip_unit());
+            if (warehousingDelivery.getWarehouse_id() != null) {
+                stockDetail.setWarehouse_id(warehousingDelivery.getWarehouse_id());
+            }
+            stockDetail.setUse_dept(stockDetails.get(0).getUse_dept());
+            stockDetail.setDept_id(stockDetails.get(0).getDept_id());
+            stockDetail.setEquip_status(stockDetails.get(0).getEquip_status());
+            stockDetail.setUnit_price(unitPrice);
+            stockDetail.setUse_year(stockDetails.get(0).getUse_year());
+            stockDetail.setProduce_date(delivery.getProduce_date());
+            stockDetail.setExpired_date(stockDetails.get(0).getExpired_date());
+            stockDetail.setCritical_date(stockDetails.get(0).getCritical_date());
+            stockDetail.setAccount_time(warehousingDelivery.getDelivery_time());
+            stockDetail.setIs_del(String.valueOf(0));
+            stockDetail.setCreate_time(new Date());
+            stockDetail.setCreate_user(sysUserService.getUser().getId());
+            stockDetailList.add(stockDetail);
+        });
+        return stockDetailList;
+    }
+
+}

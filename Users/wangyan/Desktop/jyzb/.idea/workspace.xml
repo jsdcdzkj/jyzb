@@ -1,0 +1,665 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ArtifactsWorkspaceSettings">
+    <artifacts-to-build>
+      <artifact name="rfid-web:war" />
+      <artifact name="rfid-web:war exploded" />
+    </artifacts-to-build>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="fdcd5b01-33d9-4168-a1c1-a641524d6318" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/rfid-api/src/main/java/com/jsdc/rfid/service/warehouse/impl/WarehouseStockServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/rfid-api/src/main/java/com/jsdc/rfid/service/warehouse/impl/WarehouseStockServiceImpl.java" afterDir="false" />
+    </list>
+    <list id="e3b2e3c9-32d0-46f3-9780-664570ea8a6b" name="忽略" comment="">
+      <change beforePath="$PROJECT_DIR$/rfid-api/src/main/resources/config/application-gs.yml" beforeDir="false" afterPath="$PROJECT_DIR$/rfid-api/src/main/resources/config/application-gs.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rfid-vue/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/rfid-vue/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rfid-vue/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/rfid-vue/yarn.lock" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$MAVEN_REPOSITORY$/com/baomidou/mybatis-plus-extension/3.0.7/mybatis-plus-extension-3.0.7.jar!/com/baomidou/mybatisplus/extension/service/IService.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$MAVEN_REPOSITORY$/com/baomidou/mybatis-plus-extension/3.0.7/mybatis-plus-extension-3.0.7.jar!/com/baomidou/mybatisplus/extension/service/impl/ServiceImpl.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$MAVEN_REPOSITORY$/org/springframework/spring-aop/5.1.8.RELEASE/spring-aop-5.1.8.RELEASE.jar!/org/springframework/aop/framework/CglibAopProxy.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$MAVEN_REPOSITORY$/org/springframework/spring-core/5.1.8.RELEASE/spring-core-5.1.8.RELEASE.jar!/org/springframework/cglib/proxy/MethodProxy.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$MAVEN_REPOSITORY$/org/springframework/spring-tx/5.1.8.RELEASE/spring-tx-5.1.8.RELEASE.jar!/org/springframework/transaction/interceptor/TransactionAspectSupport.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/Library/Java/JavaVirtualMachines/corretto-1.8.0_442/Contents/Home/src.zip!/java/util/List.java" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="JsBowerSettings">
+    <bower-package value="" />
+    <bower.json value="" />
+  </component>
+  <component name="LogFilters">
+    <option name="FILTER_ERRORS" value="false" />
+    <option name="FILTER_WARNINGS" value="false" />
+    <option name="FILTER_INFO" value="true" />
+    <option name="FILTER_DEBUG" value="true" />
+    <option name="CUSTOM_FILTER" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="alwaysUpdateSnapshots" value="true" />
+        <option name="nonRecursive" value="true" />
+        <option name="printErrorStackTraces" value="true" />
+        <option name="userSettingsFile" value="$USER_HOME$/.m2/settings.xml" />
+        <option name="workOffline" value="true" />
+      </MavenGeneralSettings>
+    </option>
+    <option name="importingSettings">
+      <MavenImportingSettings>
+        <option name="jdkForImporter" value="corretto-1.8" />
+        <option name="lookForNested" value="true" />
+        <option name="workspaceImportForciblyTurnedOn" value="true" />
+      </MavenImportingSettings>
+    </option>
+  </component>
+  <component name="MavenRunner">
+    <option name="jreName" value="corretto-1.8" />
+    <option name="skipTests" value="true" />
+  </component>
+  <component name="PerforceDirect.Settings">
+    <option name="CHARSET" value="无" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2xOAfW3df7ln2OsH8u20xIOKjoe" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Maven.rfid [install].executor": "Run",
+    "Maven.rfid [package].executor": "Run",
+    "Maven.rfid-api [org.apache.maven.plugins:maven-install-plugin:2.5.2:help].executor": "Run",
+    "Maven.rfid-api [org.apache.maven.plugins:maven-install-plugin:2.5.2:install].executor": "Run",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "Spring Boot.Application.executor": "Debug",
+    "Tomcat 服务器.Tomcat 9.0.104.executor": "Debug",
+    "last_opened_file_path": "/Users/wangyan/Desktop/jyzb/rfid-api/src/main/resources/config",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.stylelint": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_interpreter_path": "/Users/wangyan/.nvm/versions/node/v20.18.1/bin/node",
+    "nodejs_package_manager_path": "npm",
+    "npm.dev.executor": "Run",
+    "project.structure.last.edited": "模块",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.editor.code.editing",
+    "ts.external.directory.path": "/Applications/IntelliJ IDEA.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external",
+    "vue.rearranger.settings.migration": "true",
+    "应用程序.WarehouseStockDao.executor": "Run"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
+    ]
+  }
+}]]></component>
+  <component name="ReactorSettings">
+    <option name="notificationShown" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/rfid-api/src/main/resources/config" />
+    </key>
+  </component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="mvn install" />
+      <command value="mvn package" />
+    </option>
+  </component>
+  <component name="RunManager" selected="Spring Boot.Application">
+    <configuration name="WarehouseStockDao" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.jsdc.rfid.dao.warehouse.WarehouseStockDao" />
+      <module name="rfid-api" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.jsdc.rfid.dao.warehouse.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Application" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="rfid-web" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.jsdc.rfid.Application" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.jsdc.rfid.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Tomcat 9.0.104" type="#com.intellij.j2ee.web.tomcat.TomcatRunConfigurationFactory" factoryName="Local" APPLICATION_SERVER_NAME="Tomcat 9.0.104" ALTERNATIVE_JRE_ENABLED="false" nameIsGenerated="true">
+      <option name="UPDATING_POLICY" value="restart-server" />
+      <deployment>
+        <artifact name="rfid-web:war exploded">
+          <settings>
+            <option name="CONTEXT_PATH" value="/" />
+          </settings>
+        </artifact>
+      </deployment>
+      <server-settings>
+        <option name="BASE_DIRECTORY_NAME" value="c200f002-e4c8-437f-bb70-ae18c72270ae" />
+      </server-settings>
+      <predefined_log_file enabled="true" id="Tomcat" />
+      <predefined_log_file enabled="true" id="Tomcat Catalina" />
+      <predefined_log_file id="Tomcat Manager" />
+      <predefined_log_file id="Tomcat Host Manager" />
+      <predefined_log_file id="Tomcat Localhost Access" />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="54745" />
+      </RunnerSettings>
+      <ConfigurationWrapper VM_VAR="JAVA_OPTS" RunnerId="Cover">
+        <option name="USE_ENV_VARIABLES" value="true" />
+        <STARTUP>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </STARTUP>
+        <SHUTDOWN>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </SHUTDOWN>
+      </ConfigurationWrapper>
+      <ConfigurationWrapper VM_VAR="JAVA_OPTS" RunnerId="Debug">
+        <option name="USE_ENV_VARIABLES" value="true" />
+        <STARTUP>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </STARTUP>
+        <SHUTDOWN>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </SHUTDOWN>
+      </ConfigurationWrapper>
+      <ConfigurationWrapper VM_VAR="JAVA_OPTS" RunnerId="Profile">
+        <option name="USE_ENV_VARIABLES" value="true" />
+        <STARTUP>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </STARTUP>
+        <SHUTDOWN>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </SHUTDOWN>
+      </ConfigurationWrapper>
+      <ConfigurationWrapper VM_VAR="JAVA_OPTS" RunnerId="Run">
+        <option name="USE_ENV_VARIABLES" value="true" />
+        <STARTUP>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </STARTUP>
+        <SHUTDOWN>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </SHUTDOWN>
+      </ConfigurationWrapper>
+      <method v="2">
+        <option name="Make" enabled="true" />
+        <option name="BuildArtifacts" enabled="true">
+          <artifact name="rfid-web:war exploded" />
+        </option>
+      </method>
+    </configuration>
+    <configuration name="dev" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/rfid-vue/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="npm.dev" />
+      <item itemvalue="Spring Boot.Application" />
+      <item itemvalue="Tomcat 服务器.Tomcat 9.0.104" />
+      <item itemvalue="应用程序.WarehouseStockDao" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Spring Boot.Application" />
+        <item itemvalue="npm.dev" />
+        <item itemvalue="应用程序.WarehouseStockDao" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9f38398b9061-39b83d9b5494-intellij.indexing.shared.core-IU-241.19416.15" />
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-IU-241.19416.15" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="SvnConfiguration" cleanupOnStartRun="true">
+    <configuration>$USER_HOME$/.subversion</configuration>
+    <supportedVersion>125</supportedVersion>
+  </component>
+  <component name="SvnFileUrlMappingImpl">
+    <option name="myMappingRoots">
+      <list>
+        <SvnCopyRootSimple>
+          <option name="myVcsRoot" value="$PROJECT_DIR$" />
+          <option name="myCopyRoot" value="$PROJECT_DIR$" />
+        </SvnCopyRootSimple>
+      </list>
+    </option>
+    <option name="myMoreRealMappingRoots">
+      <list>
+        <SvnCopyRootSimple>
+          <option name="myVcsRoot" value="$PROJECT_DIR$" />
+          <option name="myCopyRoot" value="$PROJECT_DIR$" />
+        </SvnCopyRootSimple>
+      </list>
+    </option>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="fdcd5b01-33d9-4168-a1c1-a641524d6318" name="更改" comment="" />
+      <changelist id="e3b2e3c9-32d0-46f3-9780-664570ea8a6b" name="忽略" comment="" />
+      <created>1743470399307</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1743470399307</updated>
+      <workItem from="1743470400474" duration="40000" />
+      <workItem from="1747798850454" duration="7250000" />
+      <workItem from="1747892186635" duration="5865000" />
+      <workItem from="1747906359395" duration="4943000" />
+      <workItem from="1748222745606" duration="10467000" />
+      <workItem from="1748314171669" duration="2426000" />
+      <workItem from="1748594700897" duration="35000" />
+      <workItem from="1749004932540" duration="609000" />
+      <workItem from="1749006240253" duration="5539000" />
+      <workItem from="1749085458996" duration="32000" />
+      <workItem from="1749085495103" duration="15000" />
+      <workItem from="1749258590640" duration="3154000" />
+      <workItem from="1749281590233" duration="6000" />
+      <workItem from="1750065728597" duration="604000" />
+      <workItem from="1750380441997" duration="2254000" />
+      <workItem from="1750750614821" duration="685000" />
+      <workItem from="1752197687095" duration="851000" />
+      <workItem from="1752204093630" duration="1810000" />
+      <workItem from="1752548133879" duration="5944000" />
+      <workItem from="1752637771957" duration="52494000" />
+      <workItem from="1753076440645" duration="7816000" />
+      <workItem from="1753087171821" duration="61000" />
+      <workItem from="1753233912983" duration="6799000" />
+      <workItem from="1753837023240" duration="8019000" />
+      <workItem from="1754009854011" duration="263000" />
+      <workItem from="1754010121389" duration="62000" />
+      <workItem from="1754010202058" duration="47000" />
+      <workItem from="1754010264951" duration="2573000" />
+      <workItem from="1754966178292" duration="240000" />
+      <workItem from="1754966503871" duration="632000" />
+      <workItem from="1755227373009" duration="25201000" />
+      <workItem from="1755739006515" duration="3365000" />
+      <workItem from="1756279064499" duration="30000" />
+      <workItem from="1756514315452" duration="9078000" />
+      <workItem from="1756799665287" duration="4000" />
+      <workItem from="1756799688650" duration="1799000" />
+      <workItem from="1756946607158" duration="609000" />
+      <workItem from="1757388887649" duration="407000" />
+      <workItem from="1757399749283" duration="617000" />
+      <workItem from="1757402329696" duration="717000" />
+      <workItem from="1757404399521" duration="883000" />
+      <workItem from="1757558791224" duration="168000" />
+      <workItem from="1757565194445" duration="856000" />
+      <workItem from="1757989361691" duration="735000" />
+      <workItem from="1758174419725" duration="1607000" />
+      <workItem from="1758187104046" duration="3398000" />
+      <workItem from="1758256884319" duration="9875000" />
+      <workItem from="1758587259419" duration="15600000" />
+      <workItem from="1758692161251" duration="15497000" />
+      <workItem from="1758932949774" duration="8244000" />
+      <workItem from="1759018099175" duration="10806000" />
+      <workItem from="1759976750311" duration="408000" />
+      <workItem from="1760058342917" duration="20279000" />
+      <workItem from="1760930944380" duration="18087000" />
+      <workItem from="1761274171188" duration="24362000" />
+      <workItem from="1761524763939" duration="29164000" />
+      <workItem from="1762133687797" duration="13231000" />
+    </task>
+    <task id="LOCAL-00001" summary="commit">
+      <option name="closed" value="true" />
+      <created>1749084448039</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1749084448039</updated>
+    </task>
+    <task id="LOCAL-00002" summary="commit">
+      <option name="closed" value="true" />
+      <created>1752550176044</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1752550176044</updated>
+    </task>
+    <task id="LOCAL-00003" summary="commit">
+      <option name="closed" value="true" />
+      <created>1752741007030</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1752741007030</updated>
+    </task>
+    <task id="LOCAL-00004" summary="commit">
+      <option name="closed" value="true" />
+      <created>1752742127030</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1752742127030</updated>
+    </task>
+    <task id="LOCAL-00005" summary="commit">
+      <option name="closed" value="true" />
+      <created>1752804874033</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1752804874033</updated>
+    </task>
+    <task id="LOCAL-00006" summary="commit">
+      <option name="closed" value="true" />
+      <created>1752817324041</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1752817324041</updated>
+    </task>
+    <task id="LOCAL-00007" summary="commit">
+      <option name="closed" value="true" />
+      <created>1752823053037</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1752823053037</updated>
+    </task>
+    <task id="LOCAL-00008" summary="commit">
+      <option name="closed" value="true" />
+      <created>1752825063033</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1752825063033</updated>
+    </task>
+    <task id="LOCAL-00009" summary="commit">
+      <option name="closed" value="true" />
+      <created>1753079359033</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1753079359033</updated>
+    </task>
+    <task id="LOCAL-00010" summary="commit">
+      <option name="closed" value="true" />
+      <created>1753080170032</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1753080170032</updated>
+    </task>
+    <task id="LOCAL-00011" summary="commit">
+      <option name="closed" value="true" />
+      <created>1753083655037</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1753083655037</updated>
+    </task>
+    <task id="LOCAL-00012" summary="commit">
+      <option name="closed" value="true" />
+      <created>1753083980031</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1753083980031</updated>
+    </task>
+    <task id="LOCAL-00013" summary="commit">
+      <option name="closed" value="true" />
+      <created>1753839871042</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1753839871042</updated>
+    </task>
+    <task id="LOCAL-00014" summary="commit">
+      <option name="closed" value="true" />
+      <created>1755326292039</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1755326292039</updated>
+    </task>
+    <task id="LOCAL-00015" summary="commit">
+      <option name="closed" value="true" />
+      <created>1755326949038</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1755326949038</updated>
+    </task>
+    <task id="LOCAL-00016" summary="commit">
+      <option name="closed" value="true" />
+      <created>1756697246035</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1756697246035</updated>
+    </task>
+    <task id="LOCAL-00017" summary="commit">
+      <option name="closed" value="true" />
+      <created>1758591824036</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1758591824036</updated>
+    </task>
+    <task id="LOCAL-00018" summary="commit">
+      <option name="closed" value="true" />
+      <created>1758616217037</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1758616217037</updated>
+    </task>
+    <task id="LOCAL-00019" summary="commit">
+      <option name="closed" value="true" />
+      <created>1758939668032</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1758939668032</updated>
+    </task>
+    <task id="LOCAL-00020" summary="commit">
+      <option name="closed" value="true" />
+      <created>1758945086038</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1758945086038</updated>
+    </task>
+    <task id="LOCAL-00021" summary="commit">
+      <option name="closed" value="true" />
+      <created>1759018456038</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1759018456038</updated>
+    </task>
+    <task id="LOCAL-00022" summary="commit">
+      <option name="closed" value="true" />
+      <created>1760079123045</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1760079123045</updated>
+    </task>
+    <task id="LOCAL-00023" summary="commit">
+      <option name="closed" value="true" />
+      <created>1760166006039</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1760166006039</updated>
+    </task>
+    <task id="LOCAL-00024" summary="commit">
+      <option name="closed" value="true" />
+      <created>1760952765041</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1760952765041</updated>
+    </task>
+    <task id="LOCAL-00025" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761290262038</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1761290262038</updated>
+    </task>
+    <task id="LOCAL-00026" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761291410035</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1761291410035</updated>
+    </task>
+    <task id="LOCAL-00027" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761296750036</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1761296750036</updated>
+    </task>
+    <task id="LOCAL-00028" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761533173032</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1761533173032</updated>
+    </task>
+    <task id="LOCAL-00029" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761542961041</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1761542961041</updated>
+    </task>
+    <task id="LOCAL-00030" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761702785032</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1761702785032</updated>
+    </task>
+    <task id="LOCAL-00031" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761703398031</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1761703398031</updated>
+    </task>
+    <task id="LOCAL-00032" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761705401056</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1761705401056</updated>
+    </task>
+    <task id="LOCAL-00033" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761718466038</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1761718466038</updated>
+    </task>
+    <task id="LOCAL-00034" summary="commit">
+      <option name="closed" value="true" />
+      <created>1761723172031</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1761723172031</updated>
+    </task>
+    <task id="LOCAL-00035" summary="commit">
+      <option name="closed" value="true" />
+      <created>1762220229028</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1762220229028</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
+    <option name="CHECK_NEW_TODO" value="false" />
+    <MESSAGE value="commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/jyzb$Application.ic" NAME="Application 覆盖结果" MODIFIED="1762241236749" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true">
+      <FILTER>com.jsdc.rfid.*</FILTER>
+    </SUITE>
+  </component>
+</project>

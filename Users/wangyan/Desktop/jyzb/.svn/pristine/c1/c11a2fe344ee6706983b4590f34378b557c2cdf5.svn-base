@@ -1,0 +1,6 @@
+@font-face {
+    font-family: "douyuNum";
+    src: url('./douyuNum.ttf');
+    font-weight: normal;
+    font-style: normal;
+}

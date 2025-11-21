@@ -1,0 +1,320 @@
+package com.jsdc.rfid.dao.warehouse;
+
+import cn.hutool.core.date.DateUtil;
+import com.jsdc.core.base.BaseDao;
+import com.jsdc.rfid.dto.WarehousingStockDto;
+import com.jsdc.rfid.model.warehouse.WarehousingStockDetail;
+import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+@Repository
+public class WarehouseStockDetailDao extends BaseDao<WarehousingStockDetail> {
+
+    public String stockList(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select ");
+        sql.append(" a.equip_type, ");
+        sql.append(" a.equip_name, ");
+        sql.append(" a.equip_model, ");
+        sql.append(" a.unit_price, ");
+        sql.append(" a.warehouse_id, ");
+        sql.append(" a.dept_id, ");
+        sql.append(" a.equip_status, ");
+        sql.append(" sum(a.equip_in_num) as equip_in_num, ");
+        sql.append(" sum(a.equip_out_num) as equip_out_num ");
+        sql.append(" from warehousing_stock_detail a ");
+        sql.append(" WHERE a.is_del = '0' ");
+        if(warehousingStockDto.getWarehouse_id()!=null)
+            sql.append(" and a.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+        if(warehousingStockDto.getEquip_status()!=null)
+            sql.append(" and a.equip_status = ").append(warehousingStockDto.getEquip_status());
+        if(warehousingStockDto.getEquip_type()!=null)
+            sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+        if(warehousingStockDto.getEquip_name()!=null)
+            sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+        if(warehousingStockDto.getEquip_model()!=null)
+            sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+        if(warehousingStockDto.getUse_dept()!=null)
+            sql.append(" and a.dept_id = ").append(warehousingStockDto.getUse_dept());
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        sql.append(" group by a.equip_type,a.equip_name,a.equip_model,a.unit_price,a.warehouse_id,a.dept_id,a.equip_status ");
+        sql.append(" order by a.unit_price desc ");
+        return sql.toString();
+    }
+
+    public String queryLatest(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select a.* ");
+        sql.append(" from warehousing_stock_detail a ");
+        sql.append(" WHERE a.is_del = '0' ");
+        if(warehousingStockDto.getWarehouse_id()!=null)
+            sql.append(" and a.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+        if(warehousingStockDto.getEquip_status()!=null)
+            sql.append(" and a.equip_status = ").append(warehousingStockDto.getEquip_status());
+        if(warehousingStockDto.getEquip_type()!=null)
+            sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+        if(warehousingStockDto.getEquip_name()!=null)
+            sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+        if(warehousingStockDto.getEquip_model()!=null)
+            sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+        if(warehousingStockDto.getStock_type()!=null)
+            sql.append(" and a.stock_type = ").append(warehousingStockDto.getStock_type());
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        sql.append(" order by a.account_time desc ");
+        sql.append(" limit 1 ");
+        return sql.toString();
+    }
+
+    public String equipList(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select ");
+        sql.append(" a.equip_type, ");
+        sql.append(" a.equip_name, ");
+        sql.append(" a.equip_model, ");
+        //sql.append(" a.equip_unit, ");
+        //sql.append(" a.supplier_id, ");
+        sql.append(" DATE_FORMAT(a.produce_date,'%Y-%m-%d') as produceDate, ");
+        //sql.append(" a.use_year, ");
+        sql.append(" sum(a.equip_in_num) as equip_in_num, ");
+        sql.append(" sum(a.equip_out_num) as equip_out_num ");
+        sql.append(" from warehousing_stock_detail a ");
+        sql.append(" WHERE a.is_del = '0' ");
+        if(warehousingStockDto.getWarehouse_id()!=null)
+            sql.append(" and a.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+        if(warehousingStockDto.getEquip_status()!=null)
+            sql.append(" and a.equip_status = ").append(warehousingStockDto.getEquip_status());
+        if(warehousingStockDto.getUse_dept()!=null)
+            sql.append(" and a.dept_id = ").append(warehousingStockDto.getUse_dept());
+        if(warehousingStockDto.getEquip_type()!=null)
+            sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+        if(warehousingStockDto.getEquip_name()!=null)
+            sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+        if(warehousingStockDto.getEquip_model()!=null)
+            sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+        if(warehousingStockDto.getProduceDate()!=null)
+            sql.append(" and a.produce_date = '"+warehousingStockDto.getProduceDate()+"'");
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        sql.append(" group by a.equip_type,a.equip_name,a.equip_model,DATE_FORMAT(a.produce_date,'%Y-%m-%d') ");
+        return sql.toString();
+    }
+
+    public String detailList(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select ");
+        sql.append(" a.* ");
+        sql.append(" from warehousing_stock_detail a ");
+        sql.append(" WHERE a.is_del = '0' and (a.warehouse_id is not null or a.use_dept is not null)");
+        //过期
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "1".equals(warehousingStockDto.getDateType())){
+            sql.append(" and a.expired_date < '"+ DateUtil.formatDateTime(new Date()) +"'");
+        }
+        //临期
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "2".equals(warehousingStockDto.getDateType())){
+            Date now = new Date();
+            sql.append(" and a.critical_date <= '"+ DateUtil.formatDateTime(now) +"'");
+            sql.append(" and a.expired_date >= '"+ DateUtil.formatDateTime(now) +"'");
+        }
+        //正常
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getDateType()) && "3".equals(warehousingStockDto.getDateType())){
+            Date now = new Date();
+            sql.append(" and a.critical_date >= '"+ DateUtil.formatDateTime(now) +"'");
+            sql.append(" and a.expired_date >= '"+ DateUtil.formatDateTime(now) +"'");
+        }
+        if(warehousingStockDto.getWarehouse_id()!=null)
+            sql.append(" and a.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+        if(warehousingStockDto.getEquip_status()!=null)
+            sql.append(" and a.equip_status = ").append(warehousingStockDto.getEquip_status());
+        if(warehousingStockDto.getUse_dept()!=null)
+            sql.append(" and a.use_dept = ").append(warehousingStockDto.getUse_dept());
+        if(warehousingStockDto.getEquip_type()!=null)
+            sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+        if(warehousingStockDto.getEquip_name()!=null)
+            sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getEquip_model()))
+            sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+        if(warehousingStockDto.getProduceDate()!=null)
+            sql.append(" and a.produce_date = '"+warehousingStockDto.getProduceDate()+"'");
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        sql.append(" order by a.unit_price desc ");
+        return sql.toString();
+    }
+
+    public String detailCount(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select ");
+        sql.append(" a.equip_type, ");
+        sql.append(" a.equip_name, ");
+        sql.append(" a.equip_model, ");
+        sql.append(" a.equip_status, ");
+        sql.append(" IFNULL(a.warehouse_id,a.dept_id) as homeObject, ");
+        sql.append(" a.unit_price, ");
+        sql.append(" sum(a.equip_in_num) as equip_in_num, ");
+        sql.append(" sum(a.equip_out_num) as equip_out_num ");
+        sql.append(" from warehousing_stock_detail a ");
+        sql.append(" WHERE a.is_del = '0' ");
+        if(warehousingStockDto.getWarehouse_id()!=null)
+            sql.append(" and a.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+        if(warehousingStockDto.getEquip_status()!=null)
+            sql.append(" and a.equip_status = ").append(warehousingStockDto.getEquip_status());
+        if(warehousingStockDto.getUse_dept()!=null)
+            sql.append(" and a.dept_id = ").append(warehousingStockDto.getUse_dept());
+        if(warehousingStockDto.getEquip_type()!=null)
+            sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+        if(warehousingStockDto.getEquip_name()!=null)
+            sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+        if(warehousingStockDto.getEquip_model()!=null)
+            sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+        if(warehousingStockDto.getProduceDate()!=null)
+            sql.append(" and a.produce_date = '"+warehousingStockDto.getProduceDate()+"'");
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        sql.append(" group by a.equip_type,a.equip_name,a.equip_model,a.equip_status,homeObject,a.unit_price ");
+        sql.append(" order by a.unit_price desc ");
+        return sql.toString();
+    }
+
+    public String stockCount(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select ");
+        sql.append(" t.equip_type, ");
+        sql.append(" t.equip_name, ");
+        sql.append(" t.dept_id, ");
+        sql.append(" sum(case when t.equip_status = 0 then t.equip_num else 0 end) as equip_stock_num, ");
+        sql.append(" sum(case when t.equip_status = 1 then t.equip_num else 0 end) as equip_use_num, ");
+        sql.append(" sum(t.equip_num) as equip_num, ");
+        sql.append(" sum(t.price) as totalPrice ");
+        sql.append(" from ( ");
+        sql.append(" select ");
+        sql.append(" a.equip_type, ");
+        sql.append(" a.equip_name, ");
+        sql.append(" a.equip_status, ");
+        sql.append(" a.dept_id, ");
+        sql.append(" a.unit_price, ");
+        sql.append(" sum(a.equip_in_num)-sum(a.equip_out_num) as equip_num, ");
+        sql.append(" ((sum(a.equip_in_num)-sum(a.equip_out_num)) * a.unit_price) as price ");
+        sql.append(" from ");
+        sql.append(" warehousing_stock_detail a ");
+        sql.append(" where a.is_del = 0 ");
+        if(warehousingStockDto.getWarehouse_id()!=null)
+            sql.append(" and a.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+        if(warehousingStockDto.getEquip_status()!=null)
+            sql.append(" and a.equip_status = ").append(warehousingStockDto.getEquip_status());
+        if(warehousingStockDto.getUse_dept()!=null)
+            sql.append(" and a.dept_id = ").append(warehousingStockDto.getUse_dept());
+        if(warehousingStockDto.getEquip_type()!=null)
+            sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+        if(warehousingStockDto.getEquip_name()!=null)
+            sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getEquip_model()))
+            sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getProduceDate()))
+            sql.append(" and a.produce_date = '"+warehousingStockDto.getProduceDate()+"'");
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(warehousingStockDto.getStaticsTime()))
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        sql.append(" group by a.equip_type,a.equip_name,a.equip_status,a.dept_id,a.unit_price )t");
+        sql.append(" group by t.equip_type,t.equip_name,t.dept_id ");
+        if(warehousingStockDto.getPriceStart()!=null||warehousingStockDto.getPriceEnd()!=null)
+            sql.append(" HAVING sum(t.price) ");
+        List<String> prices = new ArrayList<>();
+        if(warehousingStockDto.getPriceStart()!=null){
+            prices.add(" >= "+warehousingStockDto.getPriceStart()+" ");
+        }
+        if(warehousingStockDto.getPriceEnd()!=null){
+            prices.add(" <= "+warehousingStockDto.getPriceEnd()+" ");
+        }
+        sql.append(String.join("and",prices));
+        return sql.toString();
+    }
+
+    public String disposalCount(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select ");
+        sql.append(" a.equip_type, ");
+        sql.append(" a.dept_id, ");
+        sql.append(" sum(a.equip_out_num) as equip_num ");
+        sql.append(" from warehousing_stock_detail a ");
+        sql.append(" WHERE a.is_del = '0' ");
+        if(!StringUtils.isEmpty(warehousingStockDto.getStaticsTime())){
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        }
+        if(!StringUtils.isEmpty(warehousingStockDto.getStaticsFromTime())){
+            sql.append(" and a.account_time >= '"+warehousingStockDto.getStaticsFromTime()+"'");
+        }
+        if(warehousingStockDto.getStock_type()!=null){
+            sql.append(" and a.stock_type = ").append(warehousingStockDto.getStock_type());
+        }
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        sql.append(" group by a.equip_status,a.equip_type,a.dept_id ");
+        return sql.toString();
+    }
+
+    public String stockTypeNum(WarehousingStockDto warehousingStockDto){
+        StringBuilder sql = new StringBuilder();
+        sql.append(" select ");
+        sql.append(" a.stock_type, ");
+        sql.append(" sum(a.equip_in_num) as equip_in_num, ");
+        sql.append(" sum(a.equip_out_num) as equip_out_num ");
+        sql.append(" from warehousing_stock_detail a ");
+        sql.append(" WHERE a.is_del = '0' and (a.warehouse_id is not null or a.use_dept is not null) ");
+        if(warehousingStockDto.getWarehouse_id()!=null)
+            sql.append(" and a.warehouse_id = ").append(warehousingStockDto.getWarehouse_id());
+        if(warehousingStockDto.getEquip_status()!=null)
+            sql.append(" and a.equip_status = ").append(warehousingStockDto.getEquip_status());
+        if(warehousingStockDto.getEquip_type()!=null)
+            sql.append(" and a.equip_type = ").append(warehousingStockDto.getEquip_type());
+        if(warehousingStockDto.getEquip_name()!=null)
+            sql.append(" and a.equip_name = ").append(warehousingStockDto.getEquip_name());
+        if(warehousingStockDto.getEquip_model()!=null)
+            sql.append(" and a.equip_model = '"+warehousingStockDto.getEquip_model()+"'");
+        if(warehousingStockDto.getUse_dept()!=null)
+            sql.append(" and a.dept_id = ").append(warehousingStockDto.getUse_dept());
+        //部门过滤条件
+        if(warehousingStockDto.getDeptIds()!=null){
+            sql.append(" and a.dept_id in ( ").append(String.join(",",warehousingStockDto.getDeptIds())).append(" )");
+        }
+        if(!StringUtils.isEmpty(warehousingStockDto.getStaticsTime())){
+            sql.append(" and a.account_time <= '"+warehousingStockDto.getStaticsTime()+"'");
+        }
+        if(!StringUtils.isEmpty(warehousingStockDto.getStaticsFromTime())){
+            sql.append(" and a.account_time >= '"+warehousingStockDto.getStaticsFromTime()+"'");
+        }
+        sql.append(" group by a.stock_type ");
+        return sql.toString();
+    }
+
+}

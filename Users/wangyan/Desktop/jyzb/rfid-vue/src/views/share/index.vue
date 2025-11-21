@@ -1,0 +1,228 @@
+<template>
+  <div class="app-container">
+    <div class="filter_container">
+      <moduleTitle title="条件筛选"></moduleTitle>
+      <div class="filter_box">
+        <el-form :inline="true" class="demo-form-inline topsearch" @submit.native.prevent>
+          <el-form-item>
+            <el-input v-model="listQuery.equip_name_desc" size="small" placeholder="装备名称" :maxlength="50" clearable
+              @keyup.enter.native="search" />
+          </el-form-item>
+          <el-form-item>
+            <el-cascader v-model="listQuery.use_dept" :options="deptList" :show-all-levels="false"
+              :props="{ checkStrictly: true, value: 'id', label: 'title', emitPath: false }" clearable
+              placeholder="选择机构"></el-cascader>
+          </el-form-item>
+          <el-form-item>
+            <el-select clearable v-model="listQuery.equip_type" placeholder="装备类型" @change="changeType">
+              <el-option v-for="el, index in assetsType" :key="index" :label="el.assets_type_name" :value="el.id"
+                :disabled="el.is_disable == '1'"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item v-show="listQuery.equip_type">
+            <el-select clearable v-model="listQuery.equip_name" placeholder="装备名称">
+              <el-option v-for="el, index in nameList" :key="index" :label="el.assets_type_name"
+                :value="el.id"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="primary" icon="el-icon-search" @click="search">查询</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="small" type="default" icon="el-icon-refresh" @click="refresh">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+    <div class="content-box">
+      <moduleTitle title="库存列表"></moduleTitle>
+      <div class="el-table-box">
+        <el-table v-loading="listLoading" :data="list" element-loading-text="Loading" stripe border fit height="100%"
+          highlight-current-row>
+          <el-table-column label="序号" width="60" type="index" align="center">
+            <template slot-scope="scope">
+              {{ (listQuery.page - 1) * listQuery.limit + scope.$index + 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="所属机构" prop="homeObjectDesc" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column label="装备类型" prop="equip_type_name" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column label="装备名称" prop="equip_name_desc" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column label="装备编码" prop="assets_type_code" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column label="装备型号" prop="equip_model" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column label="总数" align="center">
+            <template #default="{ row }">
+              {{ row.warehouse_num + row.dept_num }}
+            </template>
+          </el-table-column>
+          <el-table-column label="库存数量" prop="warehouse_num" align="center"></el-table-column>
+          <el-table-column label="在用数量" prop="dept_num" align="center"></el-table-column>
+          <el-table-column label="操作" width="100" align="center">
+            <template #default="{ row }">
+              <el-button type="primary" size="mini" @click="handleView(row)" v-if="row.use_dept != department">
+                借用申请
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <pagination v-show="total > 0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit"
+      @pagination="setQuery" />
+    <el-dialog title="借用申请" :visible.sync="showDialog" width="1200px">
+      <el-descriptions :column="2" border title="基础信息">
+        <el-descriptions-item label="申请单位">{{ dept_name }}</el-descriptions-item>
+        <el-descriptions-item label="申请人">{{ name }}</el-descriptions-item>
+        <el-descriptions-item label="装备所属单位">{{ detailInfo[0].homeObjectDesc || '' }}</el-descriptions-item>
+        <el-descriptions-item label="借用时段">
+          <el-date-picker style="width: 500px;" v-model="dateRange" type="daterange" range-separator="至"
+            value-format="yyyy-MM-dd" start-placeholder="开始日期" end-placeholder="结束日期">
+          </el-date-picker>
+        </el-descriptions-item>
+      </el-descriptions>
+      <el-descriptions title="借用信息" style="margin-top: 20px;"></el-descriptions>
+      <el-table :data="detailInfo" ref="detailTable" stripe border fit height="auto">
+        <el-table-column align="center" prop="equip_type_name" label="装备类型"></el-table-column>
+        <el-table-column align="center" prop="equip_name_desc" label="装备名称"></el-table-column>
+        <el-table-column align="center" prop="assets_type_code" label="装备编码"></el-table-column>
+        <el-table-column align="center" prop="equip_model" label="装备型号"></el-table-column>
+        <el-table-column align="center" prop="warehouse_num" label="库存数量"></el-table-column>
+        <el-table-column align="center" prop="dept_num" label="在用数量"></el-table-column>
+        <el-table-column align="center" label="借用数量">
+          <template #default="{ row }">
+            <el-input type="number" v-model.trim="row.take_num" placeholder="请输入"></el-input>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template slot="footer">
+        <el-button type="primary" @click="saveInfo" :loading="button_loading">确定</el-button>
+        <el-button @click="showDialog = false;">取消</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import { getStockList, shareApply } from '@/api/share'
+import { getEquipmentList, getDeptTree } from '@/api/system'
+export default {
+  data() {
+    return {
+      total: 0,
+      list: [],
+      dateRange: [],
+      listLoading: false,
+      assetsType: [],
+      nameList: [],
+      deptList: [],
+      button_loading: false,
+      listQuery: {
+        page: 1,
+        limit: 20,
+        equip_name_desc: '',
+        use_dept: '',
+        equip_type: '',
+        equip_name: ''
+      },
+      detailInfo: [{ take_num: '' }],
+      showDialog: false
+    }
+  },
+  computed: {
+    name() {
+      return this.$store.getters.name
+    },
+    department() {
+      return this.$store.state.user.department
+    },
+    dept_name() {
+      return this.$store.getters.dept_name
+    }
+  },
+  created() {
+    this.fetchData();
+    getEquipmentList().then(res => {
+      this.assetsType = res.data || [];
+    })
+    getDeptTree({ is_permission: 0 }).then(res => {
+      this.deptList = this.handleTreeList(res.data) || [];
+    })
+  },
+  methods: {
+    search() {
+      this.listQuery.page = 1;
+      this.fetchData();
+    },
+    refresh() {
+      this.listQuery = this.$options.data().listQuery;
+      this.fetchData();
+    },
+    changeType(val) {
+      this.listQuery.equip_name = '';
+      this.nameList = [];
+      if (val) {
+        getEquipmentList({ parent_id: val }).then(res => {
+          this.nameList = res.data || [];
+        })
+      }
+    },
+    handleView(row) {
+      this.dateRange = [];
+      this.button_loading = false;
+      this.showDialog = true;
+      this.detailInfo = [{ take_num: '' }];
+      this.detailInfo[0] = Object.assign(this.detailInfo[0], row);
+    },
+    setQuery({ page, limit }) {
+      this.listQuery.page = page;
+      this.listQuery.limit = limit;
+      this.fetchData();
+    },
+    fetchData() {
+      this.listLoading = true;
+      getStockList(this.listQuery).then((response) => {
+        this.list = response.data;
+        this.total = response.count;
+        this.listLoading = false;
+      })
+    },
+    saveInfo() {
+      if (!this.dateRange || this.dateRange.length == 0) {
+        this.$message.error('请选择借用时段');
+        return
+      }
+      if (!this.detailInfo[0].take_num) {
+        this.$message.error('请输入借用数量');
+        return
+      }
+      if (Number(this.detailInfo[0].take_num) > Number(this.detailInfo[0].equip_num)) {
+        this.$message.error('借用数量不能大于库存数量');
+        return
+      }
+      if (Number(this.detailInfo[0].take_num) <= 0) {
+        this.$message.error('借用数量不能为零或负数');
+        return
+      }
+      const { equip_type, equip_name, equip_model, take_num, use_dept } = this.detailInfo[0];
+      const params = {
+        use_dept,
+        delivery_num: take_num,
+        equip_type,
+        equip_name,
+        equip_model,
+        startTime: this.dateRange[0],
+        endTime: this.dateRange[1]
+      }
+      this.button_loading = true;
+      shareApply(params).then(() => {
+        this.$message.success('申请成功，请等待对方审批');
+        this.showDialog = false;
+        this.fetchData();
+      }).catch(() => {
+        this.button_loading = false;
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped></style>

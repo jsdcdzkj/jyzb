@@ -1,0 +1,315 @@
+<template>
+  <div class="login-container">
+    <div class="logowrap">
+      <img :src="require('@/assets/logo2.png')" alt="">
+    </div>
+    <div class="loginwrap">
+      <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on"
+               label-position="left">
+        <img src="../../assets/logo.png" class="logo">
+        <div style="font-size:22px;margin-top:25px;margin-bottom:30px;text-align: center;font-weight:700;">{{ title }}</div>
+        <el-form-item prop="account">
+          <!-- <span class="svg-container">
+            <svg-icon icon-class="user" />
+          </span> -->
+          <el-input
+            ref="account"
+            v-model="loginForm.account"
+            placeholder="请输入账号"
+            name="account"
+            type="text"
+            tabindex="1"
+            auto-complete="on"
+          />
+        </el-form-item>
+
+        <el-form-item prop="password">
+          <!-- <span class="svg-container">
+            <svg-icon icon-class="password" />
+          </span> -->
+          <el-input
+            :key="passwordType"
+            ref="password"
+            v-model="loginForm.password"
+            :type="passwordType"
+            placeholder="请输入密码"
+            name="password"
+            tabindex="2"
+            auto-complete="on"
+            @keyup.enter.native="handleLogin"
+          />
+          <span class="show-pwd" @click="showPwd">
+          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'"/>
+        </span>
+        </el-form-item>
+        <div>
+          <el-checkbox v-model="jizhu">记住密码</el-checkbox>
+        </div>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-button :loading="loading"
+                   style="height:50px;width:100%;margin-top:30px;font-size:20px;font-weight:bold;"
+                   @click.native.prevent="handleBookLogin">数字证书登录
+            </el-button>
+          </el-col>
+          <el-col :span="12">
+            <el-button :loading="loading" type="primary"
+                   style="background:#244895;height:50px;width:100%;margin-top:30px;font-size:20px;font-weight:bold;"
+                   @click.native.prevent="handleLogin">登录
+            </el-button>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+  </div>
+</template>
+
+<script>
+import defaultSettings from '@/settings'
+import router from '@/router'
+const title = defaultSettings.title;
+const strGatewayAddress = 'https://50.128.242.131';
+const strAppFlag = 'jyzbglxt';
+export default {
+  name: 'Login',
+  components: {},
+  data() {
+    return {
+      identifyCode: '',
+      jizhu: true,
+      title,
+      loginForm: {
+        account: '',
+        password: '',
+        captcha: '',
+        codetoken: '',
+        type: 1,
+        schoolId: 0
+      },
+      loginRules: {
+        account: [{required: true, trigger: 'blur', message: '请输入账号'}],
+        password: [{required: true, trigger: 'blur', message: '请输入密码'}],
+        captcha: [{required: true, trigger: 'blur', message: '请输入验证码'}]
+      },
+      loading: false,
+      passwordType: 'password',
+      redirect: undefined,
+      requestUrl:''
+    }
+  },
+  watch: {
+    $route: {
+      handler: function (route) {
+        this.redirect = route.query && route.query.redirect
+      },
+      immediate: true
+    }
+  },
+  mounted() {
+    // this.showCode()
+    if (localStorage.getItem('account')) {
+      this.loginForm.account = localStorage.getItem('account')
+    }
+    if (localStorage.getItem('password')) {
+      this.loginForm.password = localStorage.getItem('password')
+    }
+  },
+  methods: {
+    showPwd() {
+      if (this.passwordType === 'password') {
+        this.passwordType = ''
+      } else {
+        this.passwordType = 'password'
+      }
+      this.$nextTick(() => {
+        this.$refs.password.focus()
+      })
+    },
+    handleBookLogin(){
+      try{
+        JIT_GW_ExtInterface.GetVersion();
+      }catch(e){
+        this.$message.error("未安装控件，请先安装控件");
+        return false;
+      }
+      var cards = JIT_AUTHEN.getCertList();
+      if(!cards||cards.length==0){
+        this.$message.error("请插入数字证书");
+      }else{
+        let card = cards[0].dn;
+        if(!card){
+          this.$message.error("请插入数字证书");
+          return
+        }
+        this.loading = true;
+        let loginName = card.split('CN=')[1].split(' ')[0];
+        this.$store.dispatch('user/loginNumber', loginName).then((routers) => {
+          this.loading = false;
+          this.$store.dispatch('permission/generateRoutes',routers).then((accessRoutes)=>{
+            router.addRoutes(accessRoutes);
+            this.$router.push({ path: '/' })
+          })
+        }).catch(() => {
+          this.loading = false
+        })
+      }
+      /* //1发起随机数请求
+      var random = JIT_AUTHEN.random();
+      if(random!=""){
+        // 2对随机数做p7签名
+        var P7SignResutl = JIT_AUTHEN.AuthP7Sign(random);
+        console.log('P7签名',P7SignResutl);
+        if(P7SignResutl != ""){
+          //3请求网关认证
+          var authResult=JIT_AUTHEN.P7certAuth(random,P7SignResutl);
+          var contextForm = JSON.stringify(authResult);
+          console.log('返回数据',contextForm);
+          localStorage.setItem('contextForm', contextForm);
+        }
+      } */
+    },
+    handleLogin() {
+      this.$refs.loginForm.validate(valid => {
+        if (valid) {
+          // 接口对接登录方法
+          this.loading = true
+          this.$store.dispatch('user/login', this.loginForm).then((routers) => {
+            localStorage.setItem('user', JSON.stringify(this.loginForm))
+            this.loading = false;
+            if (this.jizhu) {
+              localStorage.setItem('password', this.loginForm.password)
+              localStorage.setItem('account', this.loginForm.account)
+            } else {
+              localStorage.removeItem('password')
+              localStorage.removeItem('account')
+            }
+            this.$store.dispatch('permission/generateRoutes',routers).then((accessRoutes)=>{
+              router.addRoutes(accessRoutes);
+              this.$router.push({ path: '/' })
+            })
+          }).catch(() => {
+            this.loading = false
+          })
+
+        } else {
+          console.log('error submit!!')
+          return false
+        }
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss">
+/* 修复input 背景不协调 和光标变色 */
+
+$bg: #283443;
+$light_gray: #fff;
+$cursor: #fff;
+
+@supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
+  .login-container .el-input input {
+    color: $cursor;
+  }
+}
+
+/* reset element-ui css */
+.login-container {
+  .el-checkbox__input.is-checked + .el-checkbox__label {
+    color: #0B3055 !important;
+  }
+
+  .el-checkbox__input.is-checked .el-checkbox__inner {
+    background-color: #0B3055;
+    border-color: #0B3055;
+  }
+
+  background: url(../../assets/login_bg.png) no-repeat left;
+  background-size: 100% 100%;
+
+  .el-input {
+    display: inline-block;
+    height: 46px;
+    width: 85%;
+    border: 0px;
+
+    input {
+      font-size: 20px;
+      color: #333;
+      background: transparent;
+      border: 0px;
+      -webkit-appearance: none;
+      border-radius: 0px;
+      padding: 12px 5px 12px 15px;
+      height: 46px;
+
+      &:-webkit-autofill {
+        box-shadow: 0 0 0px 1000px  $cursor inset !important;
+        -webkit-text-fill-color: $bg !important;
+      }
+    }
+  }
+
+  .el-form-item {
+    background: rgba(255, 255, 255, 0.13);
+    border-radius: 4px;
+    border: 2px solid rgba($color:#000,$alpha:.06);
+  }
+
+  .code {
+    .s-canvas canvas {
+      height: 52px !important;
+      width: 116px;
+    }
+  }
+}
+</style>
+
+<style lang="scss" scoped>
+$bg: #2d3a4b;
+$dark_gray: #889aa4;
+$light_gray: #eee;
+
+.login-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position:relative;
+  .logowrap{position:absolute;left:30px;top:30px;width:400px;z-index:1;img{width:100%}}
+  .loginwrap{
+    width:100%;
+    height:100%;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+
+  }
+  .login-form {
+    width: 450px;
+    position: relative;
+    padding:40px;
+    border-radius:16px;
+    background: rgba($color:#fff,$alpha:.9);
+    .logo{position:absolute;left:50%;width:100px;margin-left:-50px;top:-50px}
+  }
+
+  .svg-container {
+    padding: 6px 5px 6px 15px;
+    color: $dark_gray;
+    vertical-align: middle;
+    width: 30px;
+    display: inline-block;
+  }
+
+  .show-pwd {
+    position: absolute;
+    right: 10px;
+    top: 7px;
+    font-size: 16px;
+    color: $dark_gray;
+    cursor: pointer;
+    user-select: none;
+  }
+}
+</style>

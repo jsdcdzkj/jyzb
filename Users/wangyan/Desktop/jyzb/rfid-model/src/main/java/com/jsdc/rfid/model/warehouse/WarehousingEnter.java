@@ -1,0 +1,131 @@
+package com.jsdc.rfid.model.warehouse;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.activerecord.Model;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * ClassName: WarehousingEnter
+ * Description: 入库管理
+ *
+ * @author hanch
+ */
+@Entity
+@TableName("warehousing_enter")
+@Table(name = "warehousing_enter")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class WarehousingEnter extends Model<WarehousingEnter> implements Serializable {
+
+
+    @Id
+    @TableId(value = "id", type = IdType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    //文件id
+    private Integer fileId;
+
+    //入库单号
+    private String enter_no;
+
+    //入库单名称
+    private String enter_name;
+
+    //仓库id
+//    private Integer  warehouse_id;
+//
+//    @TableField(exist = false)
+//    @Transient
+//    private String warehouse_name;
+
+    //供应商id
+    private Integer supplier_id;
+
+    @TableField(exist = false)
+    @Transient
+    private String supplier_name;
+
+    @TableField(exist = false)
+    @Transient
+    private Integer equip_num = 0;
+
+    /**
+     * 入库时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private Date enter_time;
+
+    //入库类型
+//    private Integer enter_type;
+//
+//    @TableField(exist = false)
+//    @Transient
+//    private String enter_type_name;
+
+    /**
+     * 创建人id
+     */
+    private Integer create_user;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date create_time;
+
+    @TableField(exist = false)
+    @Transient
+    private String create_user_name;
+
+    /**
+     * 更新时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date update_time;
+    /**
+     * 更新人id
+     */
+    private Integer update_user;
+    /**
+     * 是否删除 0：未删除 1：已删除
+     */
+    private String is_del;
+
+    /**
+     * 导入时间
+     */
+    private String date_import;
+
+    //所属部门id
+    private Integer dept_id;
+
+    //共享装备 所属部门id
+    @TableField(exist = false)
+    @Transient
+    private Integer borrow_dept_id;
+
+    @TableField(exist = false)
+    @Transient
+    private String enter_start_time;
+
+    @TableField(exist = false)
+    @Transient
+    private String enter_end_time;
+
+    @TableField(exist = false)
+    @Transient
+    private List<WarehousingEnterDetail> enterDetails;
+}

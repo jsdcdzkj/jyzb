@@ -1,0 +1,140 @@
+package com.jsdc.rfid.controller;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.jsdc.core.base.BaseController;
+import com.jsdc.rfid.model.AssetsType;
+import com.jsdc.rfid.model.Consumable;
+import com.jsdc.rfid.service.AssetsTypeService;
+import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import vo.ResultInfo;
+
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * 类别
+ */
+@Controller
+@RequestMapping("assetsType")
+public class AssetsTypeController extends BaseController {
+
+    @Autowired
+    private AssetsTypeService assetsTypeService;
+
+    @RequestMapping(value = "toList.do",method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo toList(AssetsType assetsType){
+
+        return ResultInfo.success(assetsTypeService.getList(assetsType));
+    }
+
+    @RequestMapping(value = "getTree.do",method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo getTree(AssetsType assetsType){
+
+        return ResultInfo.success(assetsTypeService.getTree(assetsType));
+    }
+
+    @RequestMapping("toIndex.do")
+    public String toIndex(){
+        return "system/assetsType/index";
+    }
+
+    @RequestMapping("toImportIndex.do")
+    public String toImportIndex(){
+        return "system/assetsType/import";
+    }
+
+    @RequestMapping("toAdd.do")
+    public String toAdd(Model model,Integer id){
+        QueryWrapper<AssetsType> queryWrapper = new QueryWrapper<>() ;
+        queryWrapper.eq("is_del","0");
+        if(id!=null){
+            queryWrapper.eq("id",id);
+        }else{
+            queryWrapper.eq("parent_id","0");
+        }
+        model.addAttribute("assetsTypeList", assetsTypeService.selectList(queryWrapper));
+        model.addAttribute("assetsTypeId",id);
+        return "system/assetsType/add";
+    }
+
+    @RequestMapping("toEdit.do")
+    public String toEdit(Integer id, Model model){
+        AssetsType assetsType = assetsTypeService.selectById(id);
+        model.addAttribute("assetsType", assetsType);
+        QueryWrapper<AssetsType> queryWrapper = new QueryWrapper<>() ;
+        queryWrapper.eq("is_del","0");
+        queryWrapper.eq("id",assetsType.getParent_id());
+        model.addAttribute("assetsTypeList", assetsTypeService.selectList(queryWrapper));
+        return "system/assetsType/edit";
+    }
+
+    @RequestMapping("getPage.do")
+    @ResponseBody
+    public ResultInfo getPage(AssetsType assetsType,
+                              @RequestParam(defaultValue = "1") Integer page,
+                              @RequestParam(defaultValue = "10") Integer limit){
+        return ResultInfo.success(assetsTypeService.getPage(assetsType, page, limit));
+    }
+
+    @RequestMapping("loadTree.do")
+    @ResponseBody
+    public ResultInfo loadTree(AssetsType assetsType){
+        return ResultInfo.success(assetsTypeService.loadTree(assetsType));
+    }
+
+    @RequestMapping("add.do")
+    @ResponseBody
+    public ResultInfo add(AssetsType assetsType){
+        AssetsType type = assetsTypeService.add(assetsType);
+        if (null == type){
+            return ResultInfo.error("请检查名称和编码是否重复");
+        }
+        return ResultInfo.success(type);
+    }
+
+    @RequestMapping("edit.do")
+    @ResponseBody
+    public ResultInfo edit(AssetsType assetsType){
+        AssetsType type = assetsTypeService.edit(assetsType);
+        if (null == type){
+            return ResultInfo.error("请检查名称和编码是否重复");
+        }
+        return ResultInfo.success(type);
+    }
+
+    @RequestMapping("del.do")
+    @ResponseBody
+    public ResultInfo del(Integer id){
+        return ResultInfo.success(assetsTypeService.delete(id));
+    }
+
+    @RequestMapping(value = "/toExportTemplate.do",method = RequestMethod.GET)
+    @ResponseBody
+    public ResultInfo toExportTemplate(HttpServletResponse response){
+        return ResultInfo.success(assetsTypeService.toExportTemplate(response));
+    }
+
+    /**
+     * 资产登记导入
+     */
+    @RequestMapping(value = "/toImport.do",method = RequestMethod.POST)
+    @ResponseBody
+    public ResultInfo toAssetImport(Integer fileId,String is_save){
+        return assetsTypeService.toImport(fileId,is_save);
+    }
+
+    @RequestMapping("goErrorPage.do")
+    public String goErrorPage(){
+        return "system/assetsType/errorTable";
+    }
+}
+

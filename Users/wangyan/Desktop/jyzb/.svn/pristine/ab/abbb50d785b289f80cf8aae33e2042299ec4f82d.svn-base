@@ -1,0 +1,583 @@
+package com.jsdc.rfid.service;
+
+import cn.hutool.poi.excel.ExcelReader;
+import cn.hutool.poi.excel.ExcelUtil;
+import cn.hutool.poi.excel.ExcelWriter;
+import cn.hutool.poi.excel.StyleSet;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.jsdc.core.base.BaseService;
+import com.jsdc.rfid.common.G;
+import com.jsdc.rfid.dao.AssetsTypeDao;
+import com.jsdc.rfid.mapper.FileManageMapper;
+import com.jsdc.rfid.model.AssetsType;
+import com.jsdc.rfid.model.Consumable;
+import com.jsdc.rfid.model.FileManage;
+import com.jsdc.rfid.model.SysUser;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.*;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import vo.ResultInfo;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class AssetsTypeService extends BaseService<AssetsTypeDao, AssetsType> {
+
+    @Autowired
+    private SysUserService userService;
+
+    public PageInfo<AssetsType> getPage(AssetsType assetsType, Integer pageIndex, Integer pageSize){
+        PageHelper.startPage(pageIndex, pageSize);
+        LambdaUpdateWrapper<AssetsType> wrapper = new LambdaUpdateWrapper<>();
+        if(StringUtils.isNotEmpty(assetsType.getAssets_type_name())){
+            wrapper.like(AssetsType::getAssets_type_name, assetsType.getAssets_type_name().trim());
+        }
+        if(StringUtils.isNotEmpty(assetsType.getAssets_type_code())){
+            wrapper.like(AssetsType::getAssets_type_code, assetsType.getAssets_type_code().trim());
+        }
+        wrapper.eq(AssetsType::getIs_del, G.ISDEL_NO);
+        List<AssetsType> list = selectList(wrapper);
+        return new PageInfo<>(list);
+    }
+
+    public List<AssetsType> loadTree(AssetsType assetsType){
+        LambdaUpdateWrapper<AssetsType> wrapper = new LambdaUpdateWrapper<>();
+        if(StringUtils.isNotEmpty(assetsType.getAssets_type_name())){
+            wrapper.like(AssetsType::getAssets_type_name, assetsType.getAssets_type_name().trim());
+        }
+        if(StringUtils.isNotEmpty(assetsType.getAssets_type_code())){
+            wrapper.like(AssetsType::getAssets_type_code, assetsType.getAssets_type_code().trim());
+        }
+        wrapper.eq(AssetsType::getIs_del, G.ISDEL_NO);
+        List<AssetsType> list = selectList(wrapper);
+        //List<AssetsType> tree = getClassifyTree(list);
+        return list;
+    }
+
+    public List<AssetsType> getClassifyTree(List<AssetsType> childClassifyResp) {
+        // 返回的树形数据
+        List<AssetsType> tree = new ArrayList<AssetsType>();
+        // 第一次遍历
+        for (AssetsType treeClassify : childClassifyResp) {
+            // 找到根节点，这里我的根节点的pid为0
+            if (treeClassify.getParent_id()==null||treeClassify.getParent_id()==0) {
+                tree.add(findChild(treeClassify, childClassifyResp));
+            }
+        }
+        return tree;
+    }
+    private AssetsType findChild(AssetsType treeClassify, List<AssetsType> list) {
+        // 定义list用于存储子节点
+        List<AssetsType> children = new ArrayList<AssetsType>();
+        for (AssetsType node : list) {
+            // 找到根节点，这里我的根节点的pid为0
+            if (node.getParent_id()!=null&&node.getParent_id().equals(treeClassify.getId())) {
+                // 调用递归
+                children.add(findChild(node, list));
+            }
+        }
+        treeClassify.setChildren(children);
+        return treeClassify;
+    }
+
+
+    /**
+     * 列表查询
+     * @param assetsType
+     * @return
+     */
+    public List<AssetsType> getList(AssetsType assetsType){
+        LambdaQueryWrapper<AssetsType> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AssetsType::getIs_del, G.ISDEL_NO);
+        if (null != assetsType && null != assetsType.getParent_id()) {
+            wrapper.eq(AssetsType::getParent_id, assetsType.getParent_id());
+        } else {
+            wrapper.in(AssetsType::getParent_id, "1","2","3","4");
+        }
+        //wrapper.eq(AssetsType::getIs_enable, G.ISENABLE_YES);
+
+        List<AssetsType> list = selectList(wrapper);
+        for (AssetsType type : list) {
+            type.setTitle(type.getAssets_type_name());
+        }
+        return list;
+    }
+    /**
+     * 新增
+     * @param assetsType
+     * @return
+     */
+    public AssetsType add(AssetsType assetsType){
+        if(validate(assetsType)){
+            SysUser user = userService.getUser();
+            assetsType.setCreate_time(new Date());
+            assetsType.setCreate_user(user.getId());
+            assetsType.setUpdate_time(new Date());
+            assetsType.setUpdate_user(user.getId());
+            assetsType.setIs_del(G.ISDEL_NO);
+            assetsType.setIs_enable(G.ISENABLE_YES);
+            if(insert(assetsType) > 0){
+                return assetsType;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 新增
+     * @param assetsType
+     * @return
+     */
+    public AssetsType addOrUpdate(AssetsType assetsType){
+        if(validate(assetsType)){
+            SysUser user = userService.getUser();
+            assetsType.setCreate_time(new Date());
+            assetsType.setCreate_user(user.getId());
+            assetsType.setUpdate_time(new Date());
+            assetsType.setUpdate_user(user.getId());
+            assetsType.setIs_del(G.ISDEL_NO);
+            assetsType.setIs_enable(G.ISENABLE_YES);
+            assetsType.insertOrUpdate();
+        }
+        return null;
+    }
+
+    /**
+     * 编辑
+     * @param assetsType
+     * @return
+     */
+    public AssetsType edit(AssetsType assetsType){
+        if(validate(assetsType)){
+            SysUser user = userService.getUser();
+            AssetsType original = selectById(assetsType.getId());
+            BeanUtils.copyProperties(assetsType, original);
+            original.setUpdate_user(user.getId());
+            original.setUpdate_time(new Date());
+            if(updateById(original) > 0){
+                return original;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 删除
+     * @param id
+     * @return
+     */
+    public Boolean delete(Integer id){
+        SysUser user = userService.getUser();
+        AssetsType assetsType = selectById(id);
+        assetsType.setUpdate_time(new Date());
+        assetsType.setUpdate_user(user.getId());
+        assetsType.setIs_del(G.ISDEL_YES);
+
+        QueryWrapper<AssetsType> queryWrapper = new QueryWrapper<>() ;
+        queryWrapper.eq("is_del","0");
+        queryWrapper.eq("parent_id",id);
+        List<AssetsType> list = selectList(queryWrapper);
+        for (int i = 0; i < list.size(); i++) {
+            AssetsType type = list.get(i);
+            type.setUpdate_time(new Date());
+            type.setUpdate_user(user.getId());
+            type.setIs_del(G.ISDEL_YES);
+            type.updateById();
+        }
+
+        if(updateById(assetsType) > 0){
+            update(null, Wrappers.<AssetsType>lambdaUpdate().set(AssetsType::getParent_id, assetsType.getParent_id()).eq(AssetsType::getParent_id, id));
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public List<Integer> getClassifyTreeNew(List<AssetsType> childClassifyResp) {
+        List<Integer> ids = new ArrayList<>();
+        for (AssetsType treeClassify : childClassifyResp) {
+            ids.add(treeClassify.getId());
+            findChildNew(treeClassify,ids);
+        }
+        return ids;
+    }
+
+    private void findChildNew(AssetsType treeClassify,List<Integer> ids) {
+        QueryWrapper<AssetsType> queryWrapper = new QueryWrapper<>() ;
+        queryWrapper.eq("is_del","0");
+        queryWrapper.eq("parent_id",treeClassify.getId());
+        List<AssetsType> children = selectList(queryWrapper);
+        if(CollectionUtils.isEmpty(children))
+            return;
+        for (AssetsType node : children) {
+            ids.add(node.getId());
+            findChildNew(node,ids);
+        }
+    }
+
+
+    private Boolean validate(AssetsType assetsType){
+//        if(StringUtils.isEmpty(assetsType.getAssets_type_name()) || StringUtils.isEmpty(assetsType.getAssets_type_code())){
+//            return false;
+//        }
+        if(StringUtils.isEmpty(assetsType.getAssets_type_name()) ){
+            return false;
+        }
+        if (null != assetsType.getId() && null != selectById(assetsType.getId())){
+            int num = StringUtils.isNotEmpty(assetsType.getAssets_type_code())?selectCount(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, G.ISDEL_NO)
+                    .and(i -> i.eq(AssetsType::getAssets_type_name, assetsType.getAssets_type_name())
+                            .or().eq(AssetsType::getAssets_type_code, assetsType.getAssets_type_code()))
+                    .ne(AssetsType::getId, assetsType.getId())):selectCount(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, G.ISDEL_NO)
+                    .and(i -> i.eq(AssetsType::getAssets_type_name, assetsType.getAssets_type_name()))
+                    .ne(AssetsType::getId, assetsType.getId()));
+            if(num > 0){
+                return false;
+            }
+        }else{
+            int num = StringUtils.isNotEmpty(assetsType.getAssets_type_code())?selectCount(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, G.ISDEL_NO)
+                    .and(i -> i.eq(AssetsType::getAssets_type_name, assetsType.getAssets_type_name())
+                            .or().eq(AssetsType::getAssets_type_code, assetsType.getAssets_type_code()))):selectCount(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del, G.ISDEL_NO)
+                    .and(i -> i.eq(AssetsType::getAssets_type_name, assetsType.getAssets_type_name())));
+            if(num > 0){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public JSONArray getTree(AssetsType assetsType) {
+        // 一次性查询所有 is_del 为 "0" 的记录
+        List<AssetsType> allAssetsTypes = selectList(Wrappers.<AssetsType>lambdaQuery()
+                .eq(AssetsType::getIs_del, "0"));
+
+        // 根据 assetsType 进行模糊匹配筛选，并添加父类ID筛选条件
+        List<AssetsType> filteredAssetsTypes = allAssetsTypes.stream()
+                .filter(type -> {
+                    // 检查模糊匹配的条件：名称为空或匹配
+                    boolean nameMatches = assetsType == null || StringUtils.isEmpty(assetsType.getAssets_type_name()) ||
+                            type.getAssets_type_name().contains(assetsType.getAssets_type_name());
+
+                    // 检查父类ID的条件：如果传入了父类ID，则进行匹配；如果没有传入，则忽略父类ID过滤
+                    boolean parentIdMatches = assetsType == null || assetsType.getParent_id() == null ||
+                            type.getParent_id().equals(assetsType.getParent_id());
+
+                    // 只有在名称和父类ID都满足条件时，才包含在结果中
+                    return nameMatches && parentIdMatches;
+                })
+                .collect(Collectors.toList());
+
+
+        // 若存在模糊匹配结果，递归查找所有父级节点
+        Set<AssetsType> assetsTypesTarget = new HashSet<>(filteredAssetsTypes);
+        addParentAssets(assetsTypesTarget, allAssetsTypes);
+
+        // 按照 id 排序
+        List<AssetsType> sortedAssetsTypes = assetsTypesTarget.stream()
+                .sorted(Comparator.comparing(AssetsType::getId))
+                .collect(Collectors.toList());
+
+        // 构建树形结构
+        JSONArray treeData = new JSONArray();
+        sortedAssetsTypes.forEach(x -> {
+            JSONObject item = new JSONObject();
+            item.put("id", x.getId());
+            item.put("title", x.getAssets_type_name());
+            item.put("code", x.getAssets_type_code());
+            item.put("remarks", x.getRemarks());
+            item.put("is_statistics", x.getIs_statistics());
+            item.put("hasChildren", true);
+            item.put("parent_id", x.getParent_id() == null || x.getParent_id().equals(0) ? 0 : x.getParent_id());
+            item.put("level", x.getLevel() == null || x.getLevel().equals(0) ? 0 : x.getLevel());
+            treeData.add(item);
+        });
+
+        // 返回构建的树
+        return treeList(treeData, 0, 0);
+    }
+
+    // 递归查找父级节点
+    private void addParentAssets(Set<AssetsType> assetsTypesTarget, List<AssetsType> allAssetsTypes) {
+        // 使用一个队列来迭代父节点
+        Queue<Integer> parentIdsQueue = new LinkedList<>();
+
+        // 初始化队列，加入当前目标集合中的所有父节点 ID
+        assetsTypesTarget.stream()
+                .map(AssetsType::getParent_id)
+                .filter(parentId -> parentId != 0)
+                .forEach(parentIdsQueue::offer);
+
+        // 迭代查找父节点
+        while (!parentIdsQueue.isEmpty()) {
+            Integer parentId = parentIdsQueue.poll();
+
+            // 查找当前父节点
+            allAssetsTypes.stream()
+                    .filter(type -> type.getId().equals(parentId))
+                    .findFirst()
+                    .ifPresent(parentType -> {
+                        // 如果找到父节点，加入目标集合
+                        if (assetsTypesTarget.add(parentType)) {
+                            // 如果成功添加（即该父节点之前不在集合中），继续查找它的父节点
+                            if (parentType.getParent_id() != 0) {
+                                parentIdsQueue.offer(parentType.getParent_id());
+                            }
+                        }
+                    });
+        }
+    }
+
+    // 构建树形结构的递归方法
+    public JSONArray treeList(JSONArray dataList, int parentId, int depth) {
+        JSONArray children = new JSONArray();
+        for (Object obj : dataList) {
+            JSONObject jsonItem = (JSONObject) obj;
+            int id = jsonItem.getInteger("id");
+            int parent = jsonItem.getInteger("parent_id");
+            int level = jsonItem.getInteger("level");
+
+            if (parentId == parent) {
+                JSONArray childNodes = treeList(dataList, id, depth + 1);
+                if (childNodes.isEmpty()) {
+                    jsonItem.put("hasChildren", false);
+                }
+                jsonItem.put("children", childNodes);
+                jsonItem.put("level", level); // 设置当前节点的深度
+                children.add(jsonItem);
+            }
+        }
+        return children;
+    }
+
+
+
+    public ResultInfo toExportTemplate(HttpServletResponse response) {
+        //导出excel模板
+        List<Map<String, Object>> list = new ArrayList<>();
+        for(int i = 0; i < 50; i++){
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("上级装备名称", StringUtils.EMPTY);
+            row.put("类型名称", StringUtils.EMPTY);
+            row.put("编码", StringUtils.EMPTY);
+            list.add(row);
+        }
+
+
+        ExcelWriter writer = ExcelUtil.getWriter();
+        StyleSet styleSet = writer.getStyleSet();
+        Sheet sheet = writer.getSheet();
+        //设置下拉数据 从第几行开始
+        int firstRow = 1;
+        // 设置只导出有别名的字段
+        writer.setOnlyAlias(true);
+        // 设置默认行高
+        writer.setDefaultRowHeight(20);
+        // 设置冻结行
+        writer.setFreezePane(1);
+
+        // 一次性写出内容，使用默认样式，强制输出标题
+        writer.write(list, true);
+
+        writeCell(writer, 0, "上级装备名称", true);
+        writeCell(writer, 1, "类型名称", true);
+        writeCell(writer, 2, "编码", true);
+
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/vnd.ms-excel");
+        try (OutputStream outputStream = response.getOutputStream()){
+            response.setHeader("Content-disposition", "attachment;filename=" + URLEncoder.encode("资产类型模板.xls", "UTF-8"));
+            writer.flush(outputStream, true);
+            outputStream.flush();
+            outputStream.close();
+            return ResultInfo.success(outputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private void writeCell(ExcelWriter writer, int column, String cellValue, Boolean requiredFlag){
+        // 根据x,y轴设置单元格内容
+        writer.writeCellValue(column , 0, cellValue);
+        Font font = writer.createFont();
+        font.setBold(true);
+        if (requiredFlag){
+            // 根据x,y轴获取当前单元格样式
+            CellStyle cellStyle = writer.createCellStyle(column, 0);
+            // 内容水平居中
+            cellStyle.setAlignment(HorizontalAlignment.CENTER);
+            // 内容垂直居中
+            cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            // 设置边框
+            cellStyle.setBorderBottom(BorderStyle.THIN);
+            cellStyle.setBorderLeft(BorderStyle.THIN);
+            cellStyle.setBorderRight(BorderStyle.THIN);
+
+            // 设置高度
+            writer.setColumnWidth(column, 15);
+            // 字体颜色标红
+            font.setColor(Font.COLOR_RED);
+            cellStyle.setFont(font);
+            // 填充前景色
+            cellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        }else {
+            // 根据x,y轴获取当前单元格样式
+            CellStyle cellStyle = writer.createCellStyle(column, 0);
+            // 内容水平居中
+            cellStyle.setAlignment(HorizontalAlignment.CENTER);
+            // 内容垂直居中
+            cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            // 设置边框
+            cellStyle.setBorderBottom(BorderStyle.THIN);
+            cellStyle.setBorderLeft(BorderStyle.THIN);
+            cellStyle.setBorderRight(BorderStyle.THIN);
+            // 设置高度
+            writer.setColumnWidth(column, 15);
+            // 填充前景色
+            cellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            cellStyle.setFont(font);
+        }
+    }
+
+    @Autowired
+    private FileManageMapper fileManageMapper;
+
+    @Value("${file.upload-path}")
+    private String uploadPath;
+
+    public ResultInfo toImport(Integer fileId,String is_save) {
+        FileManage fileManage = fileManageMapper.selectById(fileId);
+        String path = uploadPath + File.separator + fileManage.getFile_name();
+
+        List<AssetsType> assetsTypeList = this.selectList(Wrappers.<AssetsType>lambdaQuery().eq(AssetsType::getIs_del,G.ISDEL_NO));
+        Map<String,Integer> assetsTypeMapId = assetsTypeList.stream().collect(Collectors.toMap(AssetsType::getAssets_type_name, AssetsType::getId));
+        Map<String, Integer> assetsTypeMapById = assetsTypeList.stream()
+                .collect(Collectors.toMap(
+                        asset -> asset.getAssets_type_name() + "-" + asset.getAssets_type_code(), // 拼接键
+                        AssetsType::getId // 使用 getId 作为值
+                ));
+        Map<String,Integer> assetsTypeMapLevel = assetsTypeList.stream().collect(Collectors.toMap(AssetsType::getAssets_type_name, AssetsType::getLevel));
+
+        File file = new File(path);
+        try {
+            ExcelReader reader = ExcelUtil.getReader(file);
+            List<Map<String, Object>> readAll = reader.readAll();
+            if (CollectionUtils.isEmpty(readAll)) {
+                throw new RuntimeException("导入的数据为空");
+            }
+            List<AssetsType> list = new ArrayList<>();
+            // 设置errorList，加入校验失败的行号和原因
+            List<Map<String, Object>> errorList = new ArrayList<>();
+            for (Map<String, Object> map : readAll) {
+                // map的所有value 去除前后空格
+                map.forEach((k, v) -> map.put(k, null == v ? "" :v.toString().trim()));
+                // 行号
+                map.put("rowNum", readAll.indexOf(map) + 2);
+                // 错误集合
+                List<String> errList = new ArrayList<>();
+                //资产分类	资产名称	状态	数量	预算单价	计量单位	实际金额	品牌	规格型号	购置日期	所属管理员	使用人	英文名称	供应商名称	厂牌号码	部门	保修期	保修截至	备注
+
+                String prentName = null == map.get("上级装备名称") ? "" : map.get("上级装备名称").toString();
+                if (StringUtils.isBlank(prentName)) {
+                    errList.add("上级装备名称不能为空 ");
+                    map.put("上级装备名称tip", "上级装备名称不能为空 ");
+                }
+
+                String name = null == map.get("类型名称") ? "" : map.get("类型名称").toString();
+                if (StringUtils.isBlank(name)) {
+                    errList.add("类型名称不能为空 ");
+                    map.put("类型名称tip", "类型名称不能为空 ");
+                }
+
+                String code = null == map.get("编码") ? "" : map.get("编码").toString();
+                if (StringUtils.isBlank(code)) {
+                    errList.add("编码不能为空 ");
+                    map.put("编码tip", "编码不能为空 ");
+                }
+                // 编码必须是5位字符
+//                if (StringUtils.isNotBlank(code) && code.length() != 5) {
+//                    errList.add("编码必须是5位字符 ");
+//                    map.put("编码tip", "编码必须是5位字符 ");
+//                }
+                //处理上级装备类型
+                String parent = null == map.get("上级装备名称") ? "0" : map.get("上级装备名称").toString();
+                Integer level = 1;
+                if (StringUtils.isNotBlank(parent)) {
+                    if(assetsTypeMapId.get(parent) != null){
+                        level = assetsTypeMapLevel.get(parent) + 1;
+                    }
+                    if (assetsTypeMapId.get(parent) == null) {
+                        errList.add("上级装备名称不存在 ");
+                        map.put("上级装备名称tip", "上级装备名称不存在 ");
+                    } else if (assetsTypeMapLevel.get(name) != null && assetsTypeMapLevel.get(name) > 1) {
+                        errList.add("上级装备层级不能大于三级 ");
+                        map.put("上级装备名称tip", "上级装备层级不能大于三级 ");
+                    }
+
+                    parent = String.valueOf(assetsTypeMapId.get(parent));
+                }
+
+                if (CollectionUtils.isEmpty(errList))  {
+                    if(assetsTypeMapById.get(name + "-" + code) != null){
+                        list.add(AssetsType.builder()
+                                .assets_type_code(code)
+                                .assets_type_name(name)
+                                .parent_id(Integer.valueOf(parent))
+                                .level(level)
+                                .id(assetsTypeMapById.get(name + "-" + code))
+                                .build());
+                    }else {
+                        list.add(AssetsType.builder()
+                                .assets_type_code(code)
+                                .assets_type_name(name)
+                                .parent_id(Integer.valueOf(parent))
+                                .level(level)
+                                .build());
+                    }
+
+                }else{
+                    map.put("error", errList);
+                    errorList.add(map);
+                }
+            }
+            if ((StringUtils.isNotEmpty(is_save) && ("1").equals(is_save))) {
+                for (AssetsType assetsManage : list) {
+                    addOrUpdate(assetsManage);
+                }
+            } else {
+                if (!CollectionUtils.isEmpty(errorList)) {
+                    return ResultInfo.builder().code(0).msg("导入失败").data(errorList).build();
+                }
+                for (AssetsType assetsManage : list) {
+                    addOrUpdate(assetsManage);
+                }
+            }
+
+
+        } catch (Exception e) {
+            return ResultInfo.error("导入失败: " + e.getMessage());
+        }
+        return ResultInfo.success();
+    }
+}

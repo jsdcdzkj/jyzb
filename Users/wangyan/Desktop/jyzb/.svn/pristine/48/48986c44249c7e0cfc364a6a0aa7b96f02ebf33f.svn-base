@@ -1,0 +1,73 @@
+package com.jsdc.rfid.dto;
+
+import com.baomidou.mybatisplus.annotation.TableField;
+import lombok.Data;
+
+import javax.persistence.Transient;
+import java.math.BigDecimal;
+import java.util.List;
+
+@Data
+public class WarehousingStockDto {
+
+    //资产编码
+    private String assets_type_code;
+
+    //时间范围 开始时间 年月日
+    private String startTime;
+    //时间范围 开始时间 年月日
+    private String endTime;
+    // 1 过期 2 临期
+    private String dateType;
+
+    //装备名称中文搜索
+    private String equip_name_desc;
+
+    //仓库id
+    private Integer warehouse_id;
+
+    //状态 0:库存 1:在用
+    private Integer equip_status;
+
+    //类型
+    private Integer equip_type;
+
+    private Integer equip_name;
+
+    private String equip_model;
+
+    //计量单位
+    private String measurement_unit;
+
+    //出入库类型 0:入库 1:调拨: 2:借用 3:处置
+    private Integer stock_type;
+
+    //使用部门
+    private Integer use_dept;
+
+    private String produceDate;
+
+    //统计时间
+    private String staticsTime;
+
+    private String staticsFromTime;
+
+    private BigDecimal priceStart;
+
+    private BigDecimal priceEnd;
+
+    private Integer year;
+
+    private Integer month;
+
+    // yyyy-MM
+    private String yearMonth;
+
+    private List<String> deptIds;
+
+    private String type;
+
+    private List<String> typeIds;
+
+    private Integer homeObject;
+}

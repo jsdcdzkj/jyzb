@@ -1,0 +1,367 @@
+<template>
+  <el-drawer :visible.sync="dialogFormVisible" :size="variables.drawWidth" @close="close" :wrapperClosable="false">
+    <span slot="title" class="drawer-title"><b>新增出库单</b></span>
+    <div class="box-card">
+      <moduleTitle title="基础信息"></moduleTitle>
+      <el-form ref="baseInfo" :model="formInline" :rules="rules" style="padding: 10px 20px;">
+        <el-row :gutter="20" type="flex">
+<!--          <el-col>-->
+<!--            <el-form-item prop="delivery_name">-->
+<!--              <el-input v-model="formInline.delivery_name" size="small" placeholder="出库单名称" :maxlength="50" clearable />-->
+<!--            </el-form-item>-->
+<!--          </el-col>-->
+          <el-col>
+            <el-form-item prop="delivery_type">
+              <el-select clearable v-model="formInline.delivery_type" placeholder="出库类型">
+                <el-option label="调拨" :value="1"></el-option>
+                <el-option label="领用" :value="2"></el-option>
+                <el-option label="处置" :value="3"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col>
+            <el-form-item prop="equip_status">
+              <el-select v-model="formInline.equip_status" placeholder="出库方式" @change="changeStatus">
+                <el-option label="库存出库" :value="0"></el-option>
+                <el-option label="在用出库" :value="1"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col v-if="formInline.equip_status!==''">
+            <el-form-item prop="warehouse_id" v-if="formInline.equip_status === 0" key="warehouse">
+              <el-select size="mini" v-model="formInline.warehouse_id" placeholder="选择仓库" @change="initList">
+                <el-option v-for="el, index in warehouseList" :key="index" :label="el.warehouse_name"
+                  :value="el.id"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item prop="use_dept" v-if="formInline.equip_status === 1" key="dept">
+              <el-cascader v-model="formInline.use_dept" style="width: 100%;"
+                disabled
+                :options="deptList"
+                :show-all-levels="false"
+                :props="{ checkStrictly: true,value:'id',label:'title',emitPath:false }"
+                clearable placeholder="选择机构"></el-cascader>
+            </el-form-item>
+          </el-col>
+          <el-col>
+            <el-form-item prop="delivery_time">
+              <el-date-picker placeholder="请选择出库时间" v-model="formInline.delivery_time" type="date"
+                value-format="yyyy-MM-dd" style="width: 100%;"></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-input type="textarea" placeholder="备注" resize="none" :rows="3" v-model="formInline.description"></el-input>
+          </el-col>
+          <el-col :span="12">
+            <el-upload
+              ref="uploadFile"
+              :limit="1"
+              :action="uploadUrl"
+              :on-error	="handleError"
+              :before-upload="handleBeforeUpload"
+              :on-success="handleSuccess"
+              :on-exceed = "onExceed"
+              :on-remove = "onRemove"
+              :headers = "{'accesstoken':token}">
+              <el-button type="primary">点击上传批示文件</el-button>
+            </el-upload>
+          </el-col>
+        </el-row>
+      </el-form>
+    </div>
+    <div class="box-card">
+      <moduleTitle title="出库明细"></moduleTitle>
+      <div style="padding: 16px;">
+        <el-table :data="formInline.deliveryDetails" ref="tableBox" stripe border fit height="calc(100vh - 410px)">
+          <el-table-column label="序号" type="index" width="60" align="center"></el-table-column>
+          <el-table-column label="装备类型" align="center">
+            <template #default="{ row, $index }">
+              <el-select size="mini" v-model="row.equip_type" placeholder="装备类型" @change="changeType($event, $index)">
+                <el-option v-for="el, index in assetsType" :key="index" :label="el.label"
+                  :value="el.value"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="装备名称" align="center">
+            <template #default="{ row,$index }">
+              <el-select size="mini" v-model="row.equip_name" @change="changeName($event, $index)" placeholder="装备名称">
+                <el-option v-for="el, index in row.nameList" :key="index" :label="el.label"
+                  :value="el.value"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="型号" align="center">
+            <template #default="{ row,$index }">
+              <el-select size="mini" v-model="row.equip_model" placeholder="装备型号" @change="changeModel($event, $index)" v-if="row.equip_name">
+                <el-option v-for="el, index in row.modelList" :key="index" :label="el.label"
+                  :value="el.value"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="出厂日期" width="155" align="center">
+            <template #default="{ row,$index }">
+              <el-select size="mini" v-model="row.produce_date" placeholder="出厂日期" v-if="row.equip_model || row.equip_name" @change="changeDate($event, $index)">
+                <el-option v-for="el, index in row.dateList" :key="index" :label="el.label"
+                  :value="el.value"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="库存数量" prop="stockCount" align="center" width="100"></el-table-column>
+          <el-table-column label="出库数量" align="center" width="100">
+            <template #default="{ row }">
+              <el-input size="mini" placeholder="出库数量" v-model.trim="row.delivery_num" :maxlength="50"></el-input>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="80" align="center">
+            <template #default="{ $index }">
+              <el-button type="danger" size="mini" @click="delItem($index)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div v-show="formInline.warehouse_id||formInline.use_dept" class="add_box" @click="addItem">+新增</div>
+    </div>
+    <div class="footer-btn">
+      <el-button @click="close" size="small">取消</el-button>
+      <el-button type="primary" size="small" :loading="loading" @click="save()">保存
+      </el-button>
+    </div>
+  </el-drawer>
+</template>
+
+<script>
+import variables from '@/styles/variables.scss';
+import { getAllWarehouse, getDeptTree } from '@/api/system'
+import { addOutOrder,getStockEquipList } from '@/api/inventory'
+const listItem = {
+  nameList: [],
+  modelList: [],
+  dateList: [],
+  stockCount:'',
+  equip_type: '',
+  equip_name: '',
+  equip_model: '',
+  delivery_num: '',
+  produce_date: ''
+}
+let loadingModal = null;
+export default {
+  name: 'add',
+  data() {
+    return {
+      loading: false,
+      dialogFormVisible: false,
+      assetsType: [],
+      warehouseList: [],
+      deptList: [],
+      uploadUrl:process.env.VUE_APP_BASE_API+'/file/uploadFiles',
+      formInline: {
+        delivery_name: '',
+        delivery_type: '',
+        equip_status: '',
+        warehouse_id: '',
+        use_dept: '',
+        delivery_time: '',
+        description:'',
+        fileId:'',
+        deliveryDetails: []
+      },
+      rules: {
+        // delivery_name: [
+        //   { required: true, message: '请输入出库单名称', trigger: 'blur' },
+        // ],
+        delivery_type: [
+          { required: true, message: '请选择出库类型', trigger: 'change' },
+        ],
+        delivery_time: [
+          { required: true, message: '请选择出库时间', trigger: 'change' },
+        ],
+        equip_status: [
+          { required: true, message: '请选择出库方式', trigger: 'change' },
+        ],
+        warehouse_id: [
+          { required: true, message: '请选择仓库', trigger: 'change' },
+        ],
+        use_dept: [
+          { required: true, message: '请选择机构', trigger: 'change' },
+        ]
+      }
+    }
+  },
+  computed: {
+    variables() {
+      return variables
+    },
+    department(){
+      return this.$store.state.user.department
+    },
+    token(){
+      return this.$store.getters.token
+    }
+  },
+  created() {
+    getAllWarehouse().then(res => {
+      this.warehouseList = res.data || [];
+    })
+    getDeptTree().then(res=>{
+        this.deptList = this.handleTreeList(res.data)||[];
+    })
+  },
+  methods: {
+    showEdit() {
+      this.loading = false;
+      this.formInline = this.$options.data().formInline;
+      this.dialogFormVisible = true;
+      this.$nextTick(() => {
+        this.$refs.baseInfo.clearValidate();
+        this.$refs.uploadFile.clearFiles();
+      })
+    },
+    handleBeforeUpload(){
+      loadingModal = this.$loading({
+          lock: true,
+          text: '上传中，请稍后',
+          spinner: 'el-icon-loading',
+          background: 'rgba(255, 255, 255, 0.7)'
+        });
+    },
+    handleSuccess(res){
+      if(res.code===0){
+        this.formInline.fileId = res.data[0].id;
+        this.$message.success('上传成功');
+      }else{
+        this.$message.error('上传失败');
+      }
+      loadingModal.close();
+    },
+    onExceed(){
+      this.$message.error('请先移除已上传的文件再上传文件');
+    },
+    onRemove(){
+      this.formInline.fileId = '';
+    },
+    handleError(){
+      this.$message.error('上传失败');
+      loadingModal.close();
+    },
+    addItem() {
+      this.formInline.deliveryDetails.push(Object.assign({}, listItem));
+      this.$nextTick(() => {
+        this.$refs.tableBox.bodyWrapper.scrollTop = 9999;
+      })
+    },
+    delItem(index) {
+      this.formInline.deliveryDetails.splice(index, 1);
+    },
+    initList(){
+      this.formInline.deliveryDetails = [Object.assign({}, listItem)];
+      getStockEquipList({equip_status:this.formInline.equip_status,warehouse_id:this.formInline.warehouse_id,use_dept:this.formInline.use_dept}).then(res=>{
+        this.assetsType = res.data;
+        if(res.data.length==0){
+          this.$message.error('该所属对象尚未有装备入库');
+          return
+        }
+      })
+    },
+    changeStatus(val){
+      this.formInline.warehouse_id = '';
+      this.formInline.use_dept = '';
+      this.formInline.deliveryDetails = [];
+      if(val===1){
+        this.formInline.use_dept = this.department;
+        this.initList();
+      }
+    },
+    changeType(val, index) {
+      this.formInline.deliveryDetails[index].equip_name = '';
+      this.formInline.deliveryDetails[index].equip_model = '';
+      this.formInline.deliveryDetails[index].produce_date = '';
+      this.formInline.deliveryDetails[index].nameList = this.assetsType.find(el=>el.value==val).child;
+    },
+    changeName(val,index){
+      const item = this.formInline.deliveryDetails[index];
+      item.equip_model = '';
+      item.produce_date = '';
+      item.stockCount = '';
+      item.modelList = item.nameList.find(el=>el.value==val).child || [];
+      item.dateList = item.modelList.length ? item.modelList[0].child || [] : [];
+
+    },
+    changeModel(val,index){
+      this.formInline.deliveryDetails[index].produce_date = '';
+      this.formInline.deliveryDetails[index].dateList = this.formInline.deliveryDetails[index].modelList.find(el=>el.value==val).child;
+      console.log(this.formInline.deliveryDetails[index].dateList)
+    },
+    changeDate(val,index){
+      this.formInline.deliveryDetails[index].stockCount = this.formInline.deliveryDetails[index].dateList.find(el=>el.value==val)?.equipNum;
+    },
+    close() {
+      this.dialogFormVisible = false;
+    },
+    save() {
+      this.$refs.baseInfo.validate((valid) => {
+        if (valid) {
+          const list = this.formInline.deliveryDetails;
+          if (list.length == 0) {
+            this.$message.error('请添加出库明细');
+            return
+          }
+          const isVerify = list.every(el => {
+            if (!el.equip_type || !el.equip_name || !el.produce_date) {
+              this.$message.error('出库明细信息不完整');
+              return false;
+            } else if (isNaN(el.delivery_num)) {
+              this.$message.error('出库数量请输入数字类型');
+              return false;
+            }else if(el.delivery_num>el.stockCount){
+              this.$message.error('出库数量大于库存数量');
+              return false;
+            } else {
+              return true;
+            }
+          })
+          if (isVerify) {
+            this.loading = true;
+            addOutOrder(this.formInline).then(() => {
+              this.$message.success('出库成功');
+              this.$emit('fetch-data');
+              this.close();
+            }).catch(() => {
+              this.loading = false;
+            });
+          }
+        }
+      })
+    }
+  }
+}
+</script>
+<style scoped lang="scss">
+.add_box {
+  height: 32px;
+  line-height: 30px;
+  border-radius: 4px;
+  border: 1px dashed rgba(145, 163, 202, 1);
+  text-align: center;
+  color: rgba(145, 163, 202, 1);
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 0 16px;
+  user-select: none;
+}
+
+::v-deep {
+  .el-drawer__header {
+    padding: 10px !important;
+    margin-bottom: 0;
+    border-bottom: 1px solid #d1d9e1;
+  }
+
+  .el-drawer__body {
+    padding-bottom: 60px;
+  }
+}
+</style>
